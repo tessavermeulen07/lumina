@@ -1,5 +1,4 @@
 import { FeatureGrid } from "@/components/marketing/FeatureGrid";
-import { Footer } from "@/components/marketing/Footer";
 import { Header } from "@/components/marketing/Header";
 import { Hero } from "@/components/marketing/Hero";
 
@@ -28,10 +27,9 @@ export default function HomePage() {
           id="prijzen"
         >
           <h2 className="mb-4 font-serif text-2xl text-foreground">Prijzen</h2>
-          <p className="text-lg text-muted">Lumina is gratis te proberen.</p>
+          <p className="text-muted">Lumina is gratis te proberen.</p>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

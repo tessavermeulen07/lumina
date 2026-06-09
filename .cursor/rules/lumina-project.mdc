@@ -22,7 +22,8 @@ app/
   (app)/           # app shell (layout + nav)
 components/
   ui/              # reusable primitives (Button, Input, Card)
-  [feature]/       # domain-specific, e.g. journal/ later
+  layout/          # site-wide shell (Footer)
+  [feature]/       # domain-specific, e.g. marketing/, app/, dashboard/
 lib/
   types/
   utils/

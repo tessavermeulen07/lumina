@@ -17,6 +17,7 @@ interface ButtonProps {
   children: React.ReactNode;
   className?: string;
   type?: "button" | "submit";
+  onClick?: () => void;
 }
 
 export function Button({
@@ -25,6 +26,7 @@ export function Button({
   children,
   className = "",
   type = "button",
+  onClick,
 }: Readonly<ButtonProps>) {
   const classes = `inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${variantClasses[variant]} ${className}`;
 
@@ -37,7 +39,7 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes}>
+    <button type={type} className={classes} onClick={onClick}>
       {children}
     </button>
   );

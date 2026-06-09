@@ -3,5 +3,7 @@ export default function MarketingLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="marketing-aura flex min-h-full flex-col">{children}</div>;
+  return (
+    <div className="marketing-aura flex min-h-0 flex-1 flex-col">{children}</div>
+  );
 }

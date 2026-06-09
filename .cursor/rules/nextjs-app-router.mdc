@@ -12,7 +12,9 @@ alwaysApply: false
 
 ## Layouts and pages
 
-- Shared shell in `app/(app)/layout.tsx`.
+- **Footer** in `app/layout.tsx` — op elke pagina; component in `components/layout/Footer.tsx`. Niet per pagina of route group dupliceren.
+- App-shell (header + main) in `app/(app)/layout.tsx`.
+- Marketing-header blijft in de marketing-pagina('s); footer niet opnieuw in pages zetten.
 - Pages stay thin: composition only, no large inline UI blocks.
 - Route Handlers (later): `app/api/**/route.ts` with typed request/response.
 

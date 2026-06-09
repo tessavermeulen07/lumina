@@ -11,6 +11,7 @@
   --lumina-500: #47827A;
   --lumina-300: #69AA80;
   --lumina-100: #8AD286;
+  --text-base: 1.125rem;
 }
 
 @theme inline {
