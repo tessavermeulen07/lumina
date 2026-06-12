@@ -15,6 +15,10 @@ const writingPrompts: Record<WritingPromptType, WritingPrompt> = {
     hint:
       "Vanmorgen noemde je dat je je rustig voelde. Wat is er sindsdien veranderd?",
   },
+  first_entry: {
+    type: "first_entry",
+    hint: "Schrijf je eerste entry.",
+  },
 };
 
 export function getWritingPrompt(

@@ -18,6 +18,7 @@ interface ButtonProps {
   className?: string;
   type?: "button" | "submit";
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 export function Button({
@@ -27,8 +28,9 @@ export function Button({
   className = "",
   type = "button",
   onClick,
+  disabled = false,
 }: Readonly<ButtonProps>) {
-  const classes = `inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${variantClasses[variant]} ${className}`;
+  const classes = `inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${className}`;
 
   if (href) {
     return (
@@ -39,7 +41,12 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes} onClick={onClick}>
+    <button
+      className={classes}
+      disabled={disabled}
+      onClick={onClick}
+      type={type}
+    >
       {children}
     </button>
   );

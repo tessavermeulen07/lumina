@@ -15,7 +15,7 @@ export function Hero() {
           afleiding...
         </p>
         <div className="flex flex-wrap gap-4">
-          <Button href="#functies" variant="primary">
+          <Button href="/registreren" variant="primary">
             Probeer gratis
           </Button>
           <Button href="#functies" variant="outline">

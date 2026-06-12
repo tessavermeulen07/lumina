@@ -10,6 +10,7 @@ const validPromptTypes = new Set<WritingPromptType>([
   "generic",
   "yesterday",
   "earlier_today",
+  "first_entry",
 ]);
 
 export default async function SchrijfPage({ searchParams }: SchrijfPageProps) {

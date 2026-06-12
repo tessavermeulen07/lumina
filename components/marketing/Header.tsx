@@ -37,7 +37,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button href="#functies" variant="primary">
+            <Button href="/registreren" variant="primary">
               Probeer gratis
             </Button>
             <Button href="/vandaag" variant="dark">
