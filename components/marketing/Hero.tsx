@@ -12,7 +12,7 @@ export function Hero() {
         <p className="max-w-prose text-lg leading-relaxed text-muted">
           Lumina is een rustige plek om te reflecteren. Schrijf op wat je
           bezighoudt, lees terug wanneer je wilt, en groei bewust — zonder
-          afleiding.
+          afleiding...
         </p>
         <div className="flex flex-wrap gap-4">
           <Button href="#functies" variant="primary">
