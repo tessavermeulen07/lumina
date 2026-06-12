@@ -19,7 +19,7 @@ export function Hero() {
             Probeer gratis
           </Button>
           <Button href="#functies" variant="outline">
-            Bekijk meer
+            Bekijk meer...
           </Button>
         </div>
       </div>
