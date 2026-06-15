@@ -1,27 +1,71 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Logo } from "@/components/ui/Logo";
+import { createClient } from "@/lib/supabase/client";
+import { getRegisterErrorMessage } from "@/lib/auth/register";
 
 interface RegisterCardProps {
   onAccountCreated: (name: string) => void;
 }
 
 export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) {
+  const router = useRouter();
   const titleId = useId();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
 
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
+    setIsLoading(true);
+
+    const registerResponse = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: trimmedName,
+        email,
+        password,
+      }),
+    });
+
+    const registerResult = (await registerResponse.json()) as { error?: string };
+
+    if (!registerResponse.ok) {
+      setIsLoading(false);
+      setError(
+        registerResult.error ??
+          "Registratie mislukt. Controleer je gegevens en probeer het opnieuw.",
+      );
+      return;
+    }
+
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (signInError) {
+      setError(getRegisterErrorMessage(signInError.message));
+      return;
+    }
+
+    router.refresh();
     onAccountCreated(trimmedName);
   }
 
@@ -97,8 +141,14 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
           value={password}
         />
 
-        <Button className="mt-2 w-full" type="submit" variant="primary">
-          Account aanmaken ✦
+        {error ? (
+          <p className="text-sm text-lumina-700" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <Button className="mt-2 w-full" disabled={isLoading} type="submit" variant="primary">
+          {isLoading ? "Account aanmaken…" : "Account aanmaken ✦"}
         </Button>
       </form>
 
