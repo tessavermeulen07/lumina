@@ -1,6 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const publicRoutes = new Set([
+    '/',
+    '/registreren',
+    '/inloggen',
+    '/wachtwoord-vergeten',
+])
+
+function isPublicRoute(pathname: string): boolean {
+    if (publicRoutes.has(pathname)) return true
+    if (pathname.startsWith('/auth')) return true
+    return false
+}
+
 export async function middleware(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
@@ -33,13 +46,17 @@ export async function middleware(request: NextRequest) {
         data: { user }
     } = await supabase.auth.getUser()
 
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth')
-    ) {
+    const { pathname } = request.nextUrl
+
+    if (user && pathname === '/inloggen') {
         const url = request.nextUrl.clone()
-        url.pathname = '/login'
+        url.pathname = '/vandaag'
+        return NextResponse.redirect(url)
+    }
+
+    if (!user && !isPublicRoute(pathname)) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/inloggen'
         return NextResponse.redirect(url)
     }
 
@@ -48,6 +65,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|login|auth).*)',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
     ]
 }

@@ -6,7 +6,11 @@ import { Footer } from "@/components/layout/Footer";
 export function FooterGate() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/onboarding")) {
+  if (
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/inloggen") ||
+    pathname.startsWith("/wachtwoord-vergeten")
+  ) {
     return null;
   }
 

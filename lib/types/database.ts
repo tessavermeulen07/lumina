@@ -1,0 +1,117 @@
+import type { AiCoachStyle } from "@/lib/types/onboarding";
+import type { GoalFrequency } from "@/lib/types/goal";
+
+export type HabitType = "habit" | "intention";
+
+export type HabitLogStatus = "completed" | "skipped" | "failed";
+
+export interface Profile {
+  id: string;
+  username: string;
+  ai_persona_preference: AiCoachStyle | null;
+  updated_at: string;
+}
+
+export interface Entry {
+  id: string;
+  user_id: string;
+  content: string;
+  summary: string | null;
+  created_at: string;
+}
+
+export interface EmotionScores {
+  [emotion: string]: number;
+}
+
+export interface EmotionAnalysis {
+  id: string;
+  entry_id: string;
+  scores: EmotionScores;
+  dominant_emotion: string;
+  analyzed_at: string;
+}
+
+export interface HabitAndIntention {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  type: HabitType;
+  frequency: GoalFrequency;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habit_id: string;
+  status: HabitLogStatus;
+  ai_checkin_prompt: string | null;
+  logged_at: string;
+}
+
+export interface AiInsightPatterns {
+  themes?: string[];
+  emotions?: string[];
+  [key: string]: unknown;
+}
+
+export interface AiInsight {
+  id: string;
+  user_id: string;
+  insight_text: string;
+  patterns_detected: AiInsightPatterns | null;
+  date_from: string;
+  date_to: string;
+}
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Omit<Profile, "updated_at"> & { updated_at?: string };
+        Update: Partial<Omit<Profile, "id">>;
+      };
+      entries: {
+        Row: Entry;
+        Insert: Omit<Entry, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<Entry, "id" | "user_id">>;
+      };
+      emotion_analyses: {
+        Row: EmotionAnalysis;
+        Insert: Omit<EmotionAnalysis, "id" | "analyzed_at"> & {
+          id?: string;
+          analyzed_at?: string;
+        };
+        Update: Partial<Omit<EmotionAnalysis, "id" | "entry_id">>;
+      };
+      habits_and_intentions: {
+        Row: HabitAndIntention;
+        Insert: Omit<HabitAndIntention, "id" | "created_at" | "is_active"> & {
+          id?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Omit<HabitAndIntention, "id" | "user_id">>;
+      };
+      habit_logs: {
+        Row: HabitLog;
+        Insert: Omit<HabitLog, "id" | "logged_at"> & {
+          id?: string;
+          logged_at?: string;
+        };
+        Update: Partial<Omit<HabitLog, "id" | "habit_id">>;
+      };
+      ai_insights: {
+        Row: AiInsight;
+        Insert: Omit<AiInsight, "id"> & { id?: string };
+        Update: Partial<Omit<AiInsight, "id" | "user_id">>;
+      };
+    };
+  };
+}
