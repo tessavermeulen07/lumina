@@ -1,0 +1,40 @@
+---
+description: React component patterns and accessibility
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React components
+
+- Functional components + hooks; no class components.
+- Props via TypeScript interfaces; use `Readonly<{...}>` where appropriate.
+- Separate presentation (`components/`) from page composition (`app/` routes).
+
+## Reuse
+
+- Reusable UI in `components/ui/` — no duplicate Button/Input per feature.
+- Extract hooks/components only on real repetition; no premature abstraction.
+
+## Accessibility
+
+- Semantic HTML: `main`, `nav`, `button` (no `div` as a clickable button).
+- `aria-label` where visible text is missing.
+- Do not forget focus states (`focus-visible:outline-*`).
+
+## Example
+
+```tsx
+interface CardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+export function Card({ title, children }: Readonly<CardProps>) {
+  return (
+    <section className="rounded-lg border p-6">
+      <h2 className="text-lg font-medium">{title}</h2>
+      {children}
+    </section>
+  );
+}
+```
