@@ -11,6 +11,8 @@ const publicRoutes = new Set([
 function isPublicRoute(pathname: string): boolean {
     if (publicRoutes.has(pathname)) return true
     if (pathname.startsWith('/auth')) return true
+    if (pathname.startsWith('/api/auth')) return true
+    if (/\.[a-zA-Z0-9]+$/.test(pathname)) return true
     return false
 }
 

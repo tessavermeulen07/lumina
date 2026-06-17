@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +13,6 @@ interface RegisterCardProps {
 }
 
 export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) {
-  const router = useRouter();
   const titleId = useId();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,7 +39,18 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
       }),
     });
 
-    const registerResult = (await registerResponse.json()) as { error?: string };
+    let registerResult: { error?: string } = {};
+    const responseText = await registerResponse.text();
+
+    if (responseText) {
+      try {
+        registerResult = JSON.parse(responseText) as { error?: string };
+      } catch {
+        setIsLoading(false);
+        setError("Registratie mislukt. Probeer het opnieuw.");
+        return;
+      }
+    }
 
     if (!registerResponse.ok) {
       setIsLoading(false);
@@ -65,7 +74,6 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
       return;
     }
 
-    router.refresh();
     onAccountCreated(trimmedName);
   }
 
