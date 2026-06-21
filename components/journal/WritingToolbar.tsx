@@ -28,6 +28,7 @@ import {
   PatternIcon,
   QuestionIcon,
   RedoIcon,
+  SaveIcon,
   SmallCapsIcon,
   StrikethroughIcon,
   SummarizeIcon,
@@ -43,6 +44,9 @@ interface WritingToolbarProps {
   visible: boolean;
   onOpenImageModal: () => void;
   onDeleteEntry: () => void;
+  onSave: () => void;
+  canSave: boolean;
+  isSaving: boolean;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
   isPrivate: boolean;
@@ -111,6 +115,9 @@ export function WritingToolbar({
   visible,
   onOpenImageModal,
   onDeleteEntry,
+  onSave,
+  canSave,
+  isSaving,
   isBookmarked,
   onToggleBookmark,
   isPrivate,
@@ -175,6 +182,15 @@ export function WritingToolbar({
               title="Meer opties"
             >
               <MoreIcon />
+            </ToolbarIconButton>
+            <ToolbarSeparator />
+            <ToolbarIconButton
+              disabled={!canSave || isSaving}
+              label="Opslaan"
+              onClick={onSave}
+              title="Opslaan"
+            >
+              <SaveIcon />
             </ToolbarIconButton>
           </div>
         )}
