@@ -39,14 +39,18 @@ import {
 } from "@/components/journal/WritingToolbarIcons";
 
 type ToolbarPanel = "main" | "ai" | "format" | "more";
+type DraftStatus = "idle" | "saving" | "saved" | "error";
 
 interface WritingToolbarProps {
   visible: boolean;
   onOpenImageModal: () => void;
   onDeleteEntry: () => void;
   onSave: () => void;
+  onAiAction: (label: string) => void;
   canSave: boolean;
-  isSaving: boolean;
+  isFinalizing: boolean;
+  draftStatus: DraftStatus;
+  draftError: string | null;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
   isPrivate: boolean;
@@ -111,13 +115,40 @@ const formatItems = [
   },
 ] as const;
 
+function getStatusMessage(
+  draftStatus: DraftStatus,
+  draftError: string | null,
+  isFinalizing: boolean,
+): string | null {
+  if (isFinalizing) {
+    return "Analyse wordt gemaakt…";
+  }
+
+  if (draftStatus === "saving") {
+    return "Concept opslaan…";
+  }
+
+  if (draftStatus === "saved") {
+    return "Concept opgeslagen";
+  }
+
+  if (draftStatus === "error" && draftError) {
+    return draftError;
+  }
+
+  return null;
+}
+
 export function WritingToolbar({
   visible,
   onOpenImageModal,
   onDeleteEntry,
   onSave,
+  onAiAction,
   canSave,
-  isSaving,
+  isFinalizing,
+  draftStatus,
+  draftError,
   isBookmarked,
   onToggleBookmark,
   isPrivate,
@@ -144,17 +175,24 @@ export function WritingToolbar({
 
   if (!visible) return null;
 
+  const statusMessage = getStatusMessage(draftStatus, draftError, isFinalizing);
+
   return (
-    <div
-      className={`fixed bottom-6 left-1/2 z-20 -translate-x-1/2 transition-all duration-300 ${
-        visible
-          ? "translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-4 opacity-0"
-      }`}
-    >
-      <div className="overflow-visible rounded-full border border-lumina-500/25 bg-surface/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+    <div className="mt-8 pb-12">
+      <div className="overflow-visible rounded-2xl border border-lumina-500/25 bg-surface/90 px-4 py-3 shadow-sm backdrop-blur-sm">
+        {statusMessage ? (
+          <p
+            aria-live="polite"
+            className={`mb-3 text-center text-sm ${
+              draftStatus === "error" ? "text-red-600" : "text-muted"
+            }`}
+          >
+            {statusMessage}
+          </p>
+        ) : null}
+
         {activePanel === "main" && (
-          <div className="flex items-center gap-0.5" role="toolbar">
+          <div className="flex flex-wrap items-center justify-center gap-1" role="toolbar">
             <ToolbarIconButton
               label="Gebruik depth AI"
               onClick={() => togglePanel("ai")}
@@ -184,14 +222,16 @@ export function WritingToolbar({
               <MoreIcon />
             </ToolbarIconButton>
             <ToolbarSeparator />
-            <ToolbarIconButton
-              disabled={!canSave || isSaving}
-              label="Opslaan"
+            <button
+              aria-label="Opslaan"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-lumina-900 px-4 text-sm font-medium text-white transition-colors hover:bg-lumina-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canSave || isFinalizing}
               onClick={onSave}
-              title="Opslaan"
+              type="button"
             >
               <SaveIcon />
-            </ToolbarIconButton>
+              {isFinalizing ? "Opslaan…" : "Opslaan"}
+            </button>
           </div>
         )}
 
@@ -208,7 +248,7 @@ export function WritingToolbar({
               <ToolbarIconButton
                 key={label}
                 label={label}
-                onClick={() => undefined}
+                onClick={() => onAiAction(label)}
                 title={title}
               >
                 <Icon />
@@ -257,7 +297,7 @@ export function WritingToolbar({
         )}
 
         {activePanel === "more" && (
-          <div className="flex items-center gap-0.5" role="toolbar">
+          <div className="flex items-center justify-center gap-1" role="toolbar">
             <ToolbarIconButton
               label="Terug"
               onClick={() => setActivePanel("main")}

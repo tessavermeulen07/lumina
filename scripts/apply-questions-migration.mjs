@@ -31,11 +31,15 @@ const dbUrl = process.env.SUPABASE_DB_URL;
 const expectedRef = "fihhvuqvplyllmpzyeoh";
 
 if (!dbUrl) {
+  const hasApiUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
   console.error(
     "SUPABASE_DB_URL ontbreekt in .env.local.\n\n" +
-      "Voeg je Lumina database connection string toe:\n" +
-      "  Supabase Dashboard → Project Settings → Database → Connection string (URI)\n" +
-      `  Project ref moet ${expectedRef} zijn.\n\n` +
+      (hasApiUrl
+        ? "Je hebt NEXT_PUBLIC_SUPABASE_URL staan — dat is de HTTP API voor Next.js, niet de Postgres-URL voor migraties.\n" +
+          "Voeg ook SUPABASE_DB_URL toe (connection string URI, begint met postgresql://).\n\n"
+        : "") +
+      "Supabase Dashboard → Project Settings → Database → Connection string (URI)\n" +
+      `Project ref moet ${expectedRef} zijn.\n\n` +
       "Of via CLI:\n" +
       "  npx supabase login\n" +
       `  npx supabase link --project-ref ${expectedRef}\n` +

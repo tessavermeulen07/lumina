@@ -78,7 +78,14 @@ export function OnboardingWizard({
   function handleCoachSelect(coachStyle: AiCoachStyle) {
     const finalAnswers: OnboardingAnswers = { ...answers, coachStyle };
     sessionStorage.setItem(ONBOARDING_ANSWERS_KEY, JSON.stringify(finalAnswers));
-    router.push("/schrijf?prompt=first_entry");
+
+    void (async () => {
+      const { completeOnboarding } = await import(
+        "@/lib/profile/complete-onboarding"
+      );
+      await completeOnboarding(coachStyle);
+      router.push("/schrijf?prompt=first_entry");
+    })();
   }
 
   const optionListClass = "flex flex-col gap-3";

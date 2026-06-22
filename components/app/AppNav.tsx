@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/vandaag", label: "Vandaag" },
-  { href: "/entries", label: "Eerdere entries" },
+  { href: "/geschiedenis", label: "Geschiedenis" },
+  { href: "/inzichten", label: "Inzichten" },
 ];
 
 function navLinkClass(isActive: boolean): string {
@@ -24,7 +25,9 @@ export function AppNav() {
       {navItems.map((item) => {
         const isActive =
           pathname === item.href ||
-          (item.href === "/vandaag" && pathname === "/");
+          (item.href === "/vandaag" && pathname === "/") ||
+          (item.href === "/geschiedenis" &&
+            (pathname === "/geschiedenis" || pathname === "/entries"));
 
         return (
           <Link

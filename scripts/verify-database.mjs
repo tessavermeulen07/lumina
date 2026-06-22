@@ -54,11 +54,14 @@ async function checkTable(table) {
 
 async function applyMigration() {
   if (!dbUrl) {
+    const hasApiUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
     console.error(
       "SUPABASE_DB_URL ontbreekt in .env.local.\n" +
-        "Voeg je database connection string toe (Supabase Dashboard → Project Settings → Database),\n" +
-        "of run de migratie handmatig in de SQL Editor:\n" +
-        "  supabase/migrations/20250615000000_initial_schema.sql\n\n" +
+        (hasApiUrl
+          ? "Let op: NEXT_PUBLIC_SUPABASE_URL is de API-URL voor de app, niet de database-verbinding voor migraties.\n" +
+            "Voeg apart SUPABASE_DB_URL toe (PostgreSQL connection string, begint met postgresql://).\n"
+          : "") +
+        "Supabase Dashboard → Project Settings → Database → Connection string (URI).\n\n" +
         "Of via CLI:\n" +
         "  npx supabase login\n" +
         "  npx supabase link --project-ref fihhvuqvplyllmpzyeoh\n" +

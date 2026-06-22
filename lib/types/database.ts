@@ -1,3 +1,8 @@
+import type {
+  EntryFeeling,
+  EntryPerson,
+  EntryTheme,
+} from "@/lib/types/entry-analysis";
 import type { AiCoachStyle } from "@/lib/types/onboarding";
 import type { GoalFrequency } from "@/lib/types/goal";
 
@@ -18,6 +23,38 @@ export interface Entry {
   content: string;
   summary: string | null;
   created_at: string;
+}
+
+export interface EntryAiResponse {
+  id: string;
+  entry_id: string;
+  action: string;
+  response_text: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface EntryUserBlock {
+  id: string;
+  entry_id: string;
+  content: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface EntryAnalysis {
+  id: string;
+  entry_id: string;
+  title: string;
+  summary: string;
+  reflection_text: string;
+  key_insight: string;
+  feelings: EntryFeeling[];
+  persons: EntryPerson[];
+  themes: EntryTheme[];
+  word_count: number;
+  emotion_scores: EmotionScores | null;
+  analyzed_at: string;
 }
 
 export interface EmotionScores {
@@ -100,6 +137,30 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<Entry, "id" | "user_id">>;
+      };
+      entry_ai_responses: {
+        Row: EntryAiResponse;
+        Insert: Omit<EntryAiResponse, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<EntryAiResponse, "id" | "entry_id">>;
+      };
+      entry_user_blocks: {
+        Row: EntryUserBlock;
+        Insert: Omit<EntryUserBlock, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<EntryUserBlock, "id" | "entry_id" | "sort_order">>;
+      };
+      entry_analyses: {
+        Row: EntryAnalysis;
+        Insert: Omit<EntryAnalysis, "id" | "analyzed_at"> & {
+          id?: string;
+          analyzed_at?: string;
+        };
+        Update: Partial<Omit<EntryAnalysis, "id" | "entry_id">>;
       };
       emotion_analyses: {
         Row: EmotionAnalysis;

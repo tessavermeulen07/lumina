@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { MenuIcon } from "@/components/app/MenuIcon";
+import { createClient } from "@/lib/supabase/client";
 
 const menuItems = [{ href: "/instellingen", label: "Instellingen" }];
 
 export function UserMenu() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
@@ -37,32 +42,27 @@ export function UserMenu() {
     };
   }, [isOpen]);
 
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setIsOpen(false);
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
         aria-controls={menuId}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted transition-colors hover:bg-lumina-500/10 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500"
+        aria-label="Instellingen en account"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-lumina-500/10 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500"
         onClick={() => setIsOpen((open) => !open)}
         type="button"
       >
-        Menu
-        <svg
-          aria-hidden="true"
-          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M6 9l6 6 6-6"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.5"
-          />
-        </svg>
+        <MenuIcon />
       </button>
 
       {isOpen ? (
@@ -82,6 +82,17 @@ export function UserMenu() {
               {item.label}
             </Link>
           ))}
+          <button
+            className="block w-full px-4 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-lumina-500/10 focus-visible:bg-lumina-500/10 focus-visible:outline-none disabled:opacity-50"
+            disabled={isSigningOut}
+            onClick={() => {
+              void handleSignOut();
+            }}
+            role="menuitem"
+            type="button"
+          >
+            {isSigningOut ? "Uitloggen…" : "Uitloggen"}
+          </button>
         </div>
       ) : null}
     </div>

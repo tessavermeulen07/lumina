@@ -9,7 +9,8 @@ export function FooterGate() {
   if (
     pathname.startsWith("/onboarding") ||
     pathname.startsWith("/inloggen") ||
-    pathname.startsWith("/wachtwoord-vergeten")
+    pathname.startsWith("/wachtwoord-vergeten") ||
+    pathname.startsWith("/schrijf")
   ) {
     return null;
   }

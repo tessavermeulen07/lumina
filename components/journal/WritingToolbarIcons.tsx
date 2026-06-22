@@ -1,4 +1,4 @@
-const iconClassName = "h-4 w-4";
+const iconClassName = "h-5 w-5";
 
 function SvgIcon({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
