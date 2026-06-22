@@ -66,6 +66,25 @@ export interface AiInsight {
   date_to: string;
 }
 
+export type QuestionCategory =
+  | "stress_angst"
+  | "patronen"
+  | "intenties"
+  | "emotieregulatie";
+
+export type QuestionFramework =
+  | "cbt"
+  | "groei_reflectie"
+  | "gedragsactivatie"
+  | "act";
+
+export interface Question {
+  id: string;
+  category: QuestionCategory;
+  framework: QuestionFramework;
+  question_text: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -111,6 +130,11 @@ export interface Database {
         Row: AiInsight;
         Insert: Omit<AiInsight, "id"> & { id?: string };
         Update: Partial<Omit<AiInsight, "id" | "user_id">>;
+      };
+      questions: {
+        Row: Question;
+        Insert: Omit<Question, "id"> & { id?: string };
+        Update: Partial<Omit<Question, "id">>;
       };
     };
   };

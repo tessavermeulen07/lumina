@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/verify-database.mjs migrate",
+    "db:apply-questions": "node scripts/apply-questions-migration.mjs",
     "db:verify": "node scripts/verify-database.mjs verify",
     "db:verify-rls": "node scripts/verify-rls.mjs"
   },
