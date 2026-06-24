@@ -3,7 +3,12 @@ import type {
   EntryPerson,
   EntryTheme,
 } from "@/lib/types/entry-analysis";
-import type { AiCoachStyle } from "@/lib/types/onboarding";
+import type {
+  AiCoachStyle,
+  JournalExperience,
+  OnboardingMainGoal,
+  OnboardingPriority,
+} from "@/lib/types/onboarding";
 import type { GoalFrequency } from "@/lib/types/goal";
 
 export type HabitType = "habit" | "intention";
@@ -14,6 +19,10 @@ export interface Profile {
   id: string;
   username: string;
   ai_persona_preference: AiCoachStyle | null;
+  onboarding_main_goal: OnboardingMainGoal | null;
+  onboarding_priorities: OnboardingPriority[];
+  onboarding_experience: JournalExperience | null;
+  onboarding_completed_at: string | null;
   updated_at: string;
 }
 

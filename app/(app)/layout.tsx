@@ -1,10 +1,19 @@
+import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app/AppHeader";
+import { getProfile } from "@/lib/auth/get-profile";
+import { isOnboardingComplete } from "@/lib/profile/onboarding-context";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profile = await getProfile();
+
+  if (!isOnboardingComplete(profile)) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <AppHeader />

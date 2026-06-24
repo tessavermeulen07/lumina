@@ -5,6 +5,7 @@ import { resolveCoachStyle } from "@/lib/ai/agent-prompt";
 import { runLuminaAgent } from "@/lib/ai/agent";
 import { mapToolbarLabelToAction } from "@/lib/ai/toolbar-actions";
 import { getProfile } from "@/lib/auth/get-profile";
+import { buildOnboardingPromptContext } from "@/lib/profile/onboarding-context";
 import { buildEntryThreadContext } from "@/lib/entries/entry-thread";
 import {
   createEntryWithUserBlock,
@@ -67,6 +68,7 @@ export async function respondToEntryAction(input: {
   }
 
   const threadContext = buildEntryThreadContext(existingBlocks);
+  const onboardingContext = buildOnboardingPromptContext(profile);
 
   const result = await runLuminaAgent({
     userQuestion: `Help me met: ${input.actionLabel}`,
@@ -76,6 +78,7 @@ export async function respondToEntryAction(input: {
     userId: profile.id,
     interactionMode: "entry_toolbar",
     coachStyle: resolveCoachStyle(profile.ai_persona_preference),
+    onboardingContext,
     actionLabel: input.actionLabel,
     toolbarAction: action,
   });

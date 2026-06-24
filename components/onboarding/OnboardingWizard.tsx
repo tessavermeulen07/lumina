@@ -40,6 +40,8 @@ export function OnboardingWizard({
   const [step, setStep] = useState(1);
   const [userName, setUserName] = useState(userNameProp ?? "daar");
   const [answers, setAnswers] = useState<OnboardingAnswers>(emptyAnswers);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (userNameProp) {
@@ -80,10 +82,21 @@ export function OnboardingWizard({
     sessionStorage.setItem(ONBOARDING_ANSWERS_KEY, JSON.stringify(finalAnswers));
 
     void (async () => {
+      setIsSaving(true);
+      setSaveError(null);
+
       const { completeOnboarding } = await import(
         "@/lib/profile/complete-onboarding"
       );
-      await completeOnboarding(coachStyle);
+      const result = await completeOnboarding(finalAnswers);
+
+      setIsSaving(false);
+
+      if ("error" in result) {
+        setSaveError(result.error);
+        return;
+      }
+
       router.push("/schrijf?prompt=first_entry");
     })();
   }
@@ -175,6 +188,7 @@ export function OnboardingWizard({
             {coachOptions.map((option) => (
               <SelectionCard
                 description={option.description}
+                disabled={isSaving}
                 isSelected={answers.coachStyle === option.id}
                 key={option.id}
                 label={option.label}
@@ -182,6 +196,16 @@ export function OnboardingWizard({
               />
             ))}
           </div>
+          {saveError ? (
+            <p className="mt-4 text-center text-sm text-red-600" role="alert">
+              {saveError}
+            </p>
+          ) : null}
+          {isSaving ? (
+            <p className="mt-4 text-center text-sm text-muted">
+              Je voorkeuren worden opgeslagen…
+            </p>
+          ) : null}
           <p className={`text-center text-sm text-muted ${compact ? "mt-4" : "mt-6"}`}>
             Je kunt je coach later aanpassen in Instellingen.
           </p>

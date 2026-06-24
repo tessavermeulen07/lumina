@@ -19,6 +19,7 @@ export interface AgentInput {
   userId: string;
   interactionMode: InteractionMode;
   coachStyle: AiCoachStyle;
+  onboardingContext?: string;
   actionLabel?: string;
   toolbarAction?: ToolbarAiAction;
 }
@@ -50,6 +51,7 @@ export async function runLuminaAgent(
   const systemPrompt = buildSystemPrompt({
     interactionMode: input.interactionMode,
     coachStyle: input.coachStyle,
+    onboardingContext: input.onboardingContext,
     toolbarAction: input.toolbarAction,
   });
 

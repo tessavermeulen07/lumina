@@ -53,6 +53,7 @@ const TOOLBAR_ACTION_INSTRUCTIONS: Record<ToolbarAiAction, string> = {
 interface BuildSystemPromptInput {
   interactionMode: InteractionMode;
   coachStyle: AiCoachStyle;
+  onboardingContext?: string;
   toolbarAction?: ToolbarAiAction;
 }
 
@@ -60,8 +61,15 @@ export function buildSystemPrompt(input: BuildSystemPromptInput): string {
   const parts = [
     BASE_PROMPT,
     COACH_STYLE_PROMPTS[input.coachStyle],
-    input.interactionMode === "dashboard" ? DASHBOARD_PROMPT : TOOLBAR_PROMPT,
   ];
+
+  if (input.onboardingContext) {
+    parts.push(input.onboardingContext);
+  }
+
+  parts.push(
+    input.interactionMode === "dashboard" ? DASHBOARD_PROMPT : TOOLBAR_PROMPT,
+  );
 
   if (input.interactionMode === "entry_toolbar" && input.toolbarAction) {
     parts.push(TOOLBAR_ACTION_INSTRUCTIONS[input.toolbarAction]);
