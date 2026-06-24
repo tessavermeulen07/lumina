@@ -1,7 +1,7 @@
 export const insightsCardClass =
   "rounded-2xl border border-neutral-200/80 bg-white px-6 py-6 shadow-sm dark:border-neutral-700 dark:bg-surface";
 
-export const insightsHeadingClass = "text-lg font-bold text-foreground";
+export const insightsHeadingClass = "text-lg font-bold text-foreground text-center";
 
 export const insightsSectionHeadingClass =
   "text-center text-2xl font-bold tracking-wide text-lumina-500 [font-variant:small-caps] dark:text-lumina-300";

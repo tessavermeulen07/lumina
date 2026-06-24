@@ -38,6 +38,7 @@ const tables = [
   "habits_and_intentions",
   "habit_logs",
   "ai_insights",
+  "weekly_reports",
   "questions",
 ];
 

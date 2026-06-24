@@ -4,25 +4,25 @@ overview: Fase 1 maakt onboarding persistent in Supabase en koppelt hoofddoel, p
 todos:
   - id: f1-migration
     content: Migratie 20250622150000_profile_onboarding.sql + Profile-interface in database.ts
-    status: pending
+    status: completed
   - id: f1-complete-onboarding
     content: complete-onboarding.ts uitbreiden met volledige OnboardingAnswers + validatie
-    status: pending
+    status: completed
   - id: f1-wizard
     content: "OnboardingWizard: finalAnswers doorgeven, loading/error state"
-    status: pending
+    status: completed
   - id: f1-context-helper
     content: Nieuw onboarding-context.ts + buildOnboardingPromptContext helper
-    status: pending
+    status: completed
   - id: f1-ai-prompt
     content: "agent-prompt.ts, agent.ts, respond-to-entry.ts, ask-lumina.ts: context doorgeven"
-    status: pending
+    status: completed
   - id: f1-enforce
     content: "app/(app)/layout.tsx: redirect naar /onboarding als niet afgerond"
-    status: pending
+    status: completed
   - id: f1-verify
     content: "Handmatig testen: registratie, AI-prompt, redirect, backfill bestaande users"
-    status: pending
+    status: completed
 isProject: true
 ---
 

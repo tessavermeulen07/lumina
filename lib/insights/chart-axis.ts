@@ -24,3 +24,17 @@ export function getWordChartAxis(maxWordCount: number): {
 
   return { axisMax, ticks };
 }
+
+export function getPercentChartAxis(maxPercent: number): {
+  axisMax: number;
+  ticks: number[];
+} {
+  const axisMax = Math.max(100, niceCeil(maxPercent));
+  const stepCount = 4;
+  const step = axisMax / stepCount;
+  const ticks = Array.from({ length: stepCount + 1 }, (_, index) =>
+    Math.round(index * step),
+  );
+
+  return { axisMax, ticks };
+}

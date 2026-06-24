@@ -1,6 +1,10 @@
 import { getAuthenticatedUser } from "@/lib/auth/get-profile";
 import { startOfWeek, toLocalDateString } from "@/lib/data/week-utils";
 import { formatDayLabel } from "@/lib/insights/history-format";
+import {
+  getWeekStartsWithEntries,
+  resolveWeekNavigation,
+} from "@/lib/insights/week-navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EntryAnalysis } from "@/lib/types/database";
 import type {
@@ -41,29 +45,6 @@ function formatWeekRange(weekStart: Date): string {
   }
 
   return `${startPart} – ${endPart}`;
-}
-
-async function getWeekStartsWithEntries(userId: string): Promise<string[]> {
-  const supabase = await createClient();
-
-  const { data: entries } = await supabase
-    .from("entries")
-    .select("created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (!entries?.length) {
-    return [];
-  }
-
-  const weekStarts = new Set<string>();
-
-  for (const entry of entries) {
-    const weekStart = startOfWeek(new Date(entry.created_at));
-    weekStarts.add(toLocalDateString(weekStart));
-  }
-
-  return [...weekStarts].sort((a, b) => b.localeCompare(a));
 }
 
 export async function getHistoryByWeek(
@@ -135,24 +116,17 @@ export async function getHistoryByWeek(
       ),
     }));
 
-  const currentIndex = weekStarts.indexOf(selectedWeekStartStr);
-  const hasPreviousWeek =
-    currentIndex >= 0 ? currentIndex < weekStarts.length - 1 : weekStarts.length > 0;
-  const previousWeekStart =
-    currentIndex >= 0 ? (weekStarts[currentIndex + 1] ?? null) : weekStarts[0] ?? null;
-  const nextWeekStart =
-    currentIndex > 0 ? (weekStarts[currentIndex - 1] ?? null) : null;
-  const isCurrentWeek = selectedWeekStartStr === currentWeekStartStr;
+  const navigation = resolveWeekNavigation(
+    weekStarts,
+    selectedWeekStartStr,
+    currentWeekStartStr,
+  );
 
   return {
     weekStart: selectedWeekStartStr,
     weekEnd: toLocalDateString(weekEnd),
     weekLabel: formatWeekRange(selectedWeekStart),
-    isCurrentWeek,
-    hasPreviousWeek,
-    hasNextWeek: !isCurrentWeek && nextWeekStart !== null,
-    previousWeekStart,
-    nextWeekStart,
+    ...navigation,
     dayGroups,
   };
 }

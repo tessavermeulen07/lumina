@@ -1,11 +1,15 @@
 import {
   groupFeelingsByColumn,
-  mergeEmotionScores,
   mergeFeelingsByColumn,
   type EmotionColumnId,
 } from "@/lib/ai/emotion-scores";
 import { getAuthenticatedUser } from "@/lib/auth/get-profile";
 import { startOfWeek, toLocalDateString } from "@/lib/data/week-utils";
+import { averageEmotionScores } from "@/lib/insights/emotion-analysis-utils";
+import {
+  getWeekStartsWithEntries,
+  resolveWeekNavigation,
+} from "@/lib/insights/week-navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EntryAnalysis, EmotionScores } from "@/lib/types/database";
 import type { EntryFeeling, EntryPerson } from "@/lib/types/entry-analysis";
@@ -25,6 +29,10 @@ export interface WeeklyInsights {
   weekStart: string;
   weekLabel: string;
   isCurrentWeek: boolean;
+  hasPreviousWeek: boolean;
+  hasNextWeek: boolean;
+  previousWeekStart: string | null;
+  nextWeekStart: string | null;
   entryCount: number;
   totalWords: number;
   wordsPerDay: WordsPerDay[];
@@ -82,13 +90,6 @@ function aggregateFeelings(analyses: EntryAnalysis[]): EntryFeeling[] {
   return [...map.values()];
 }
 
-function resolveEmotionScores(analysis: EntryAnalysis): EmotionScores | null {
-  return mergeEmotionScores(
-    analysis.emotion_scores,
-    analysis.feelings as EntryFeeling[],
-  );
-}
-
 function aggregateThemes(analyses: EntryAnalysis[]): {
   primaryTheme: ThemeWithCount | null;
   subThemes: ThemeWithCount[];
@@ -137,33 +138,6 @@ function aggregatePersons(analyses: EntryAnalysis[]): EntryPerson[] {
   );
 }
 
-function averageEmotions(analyses: EntryAnalysis[]): EmotionScores {
-  const totals: EmotionScores = {};
-  let count = 0;
-
-  for (const analysis of analyses) {
-    const scores = resolveEmotionScores(analysis);
-
-    if (!scores) continue;
-
-    count += 1;
-
-    for (const [emotion, score] of Object.entries(scores)) {
-      totals[emotion] = (totals[emotion] ?? 0) + score;
-    }
-  }
-
-  if (count === 0) return {};
-
-  const averages: EmotionScores = {};
-
-  for (const [emotion, total] of Object.entries(totals)) {
-    averages[emotion] = total / count;
-  }
-
-  return averages;
-}
-
 export async function getWeeklyInsights(
   weekStartParam?: string,
 ): Promise<WeeklyInsights> {
@@ -171,9 +145,12 @@ export async function getWeeklyInsights(
   const supabase = await createClient();
   const now = new Date();
   const currentWeekStart = startOfWeek(now);
+  const currentWeekStartStr = toLocalDateString(currentWeekStart);
   const selectedWeekStart = weekStartParam
     ? startOfWeek(new Date(`${weekStartParam}T12:00:00`))
     : currentWeekStart;
+  const selectedWeekStartStr = toLocalDateString(selectedWeekStart);
+  const weekStarts = await getWeekStartsWithEntries(user.id);
   const weekEnd = addDays(selectedWeekStart, 6);
   weekEnd.setHours(23, 59, 59, 999);
 
@@ -239,16 +216,20 @@ export async function getWeeklyInsights(
     ),
   );
 
+  const navigation = resolveWeekNavigation(
+    weekStarts,
+    selectedWeekStartStr,
+    currentWeekStartStr,
+  );
+
   return {
-    weekStart: toLocalDateString(selectedWeekStart),
+    weekStart: selectedWeekStartStr,
     weekLabel: formatWeekLabel(selectedWeekStart),
-    isCurrentWeek:
-      toLocalDateString(selectedWeekStart) ===
-      toLocalDateString(currentWeekStart),
+    ...navigation,
     entryCount: analyses.length,
     totalWords,
     wordsPerDay,
-    emotionAverages: averageEmotions(analyses),
+    emotionAverages: averageEmotionScores(analyses),
     feelings,
     feelingsByColumn,
     primaryTheme: themes.primaryTheme,

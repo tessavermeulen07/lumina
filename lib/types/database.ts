@@ -3,6 +3,7 @@ import type {
   EntryPerson,
   EntryTheme,
 } from "@/lib/types/entry-analysis";
+import type { WeeklyReportSection } from "@/lib/types/weekly-report";
 import type {
   AiCoachStyle,
   JournalExperience,
@@ -112,6 +113,17 @@ export interface AiInsight {
   date_to: string;
 }
 
+export interface WeeklyReport {
+  id: string;
+  user_id: string;
+  week_start: string;
+  analysis_level: number;
+  headline: string;
+  sections: WeeklyReportSection[];
+  total_words: number;
+  generated_at: string;
+}
+
 export type QuestionCategory =
   | "stress_angst"
   | "patronen"
@@ -200,6 +212,14 @@ export interface Database {
         Row: AiInsight;
         Insert: Omit<AiInsight, "id"> & { id?: string };
         Update: Partial<Omit<AiInsight, "id" | "user_id">>;
+      };
+      weekly_reports: {
+        Row: WeeklyReport;
+        Insert: Omit<WeeklyReport, "id" | "generated_at"> & {
+          id?: string;
+          generated_at?: string;
+        };
+        Update: Partial<Omit<WeeklyReport, "id" | "user_id" | "week_start">>;
       };
       questions: {
         Row: Question;

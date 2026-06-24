@@ -17,8 +17,9 @@ Geef JSON met:
 - key_insight: één kernzin met het belangrijkste inzicht
 - english_plain_text: getrouwe Engelse vertaling van alleen de user-tekst (voor sentiment-analyse, niet tonen aan gebruiker)
 - feelings: array van { key, label, emoji, intensity } — max 5 gevoelens
-  - key: verplicht één van sadness, fear, joy, anger, surprise, disgust
-  - label: Nederlandse beschrijving (bijv. Verdrietig, Bezorgd)
+  - key: verplicht één van sadness, fear, joy, anger, surprise, disgust, love
+  - love: alleen voor affectie en verbondenheid (verliefd, geliefd, dankbaar) — niet voor algemene blijdschap
+  - label: Nederlandse beschrijving (bijv. Verdrietig, Bezorgd, Verliefd)
   - emoji: passend bij het gevoel
   - intensity: getal 1-5 (5 = sterkst)
 - persons: array van { name, mention_count } — personen die genoemd worden

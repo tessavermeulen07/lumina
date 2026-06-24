@@ -40,18 +40,34 @@ const FEELING_KEY_ALIASES: Record<string, EmotionKey> = {
   boos: "anger",
   surprise: "surprise",
   verrassing: "surprise",
+  verrast: "surprise",
   disgust: "disgust",
   walging: "disgust",
 };
 
+/** Affectie/verbondenheid — apart van algemene blijdschap of verrassing */
+const AFFECTION_KEY_ALIASES = new Set([
+  "love",
+  "positive",
+  "liefde",
+  "verliefd",
+  "geliefd",
+  "dankbaar",
+  "affection",
+]);
+
 const COLUMN_FOR_KEY: Record<EmotionKey, EmotionColumnId[]> = {
   sadness: ["sadness"],
   fear: ["fear"],
-  joy: ["joy", "positive"],
+  joy: ["joy"],
   anger: ["anger"],
-  surprise: ["surprise", "positive"],
+  surprise: ["surprise"],
   disgust: ["surprise"],
 };
+
+export function isAffectionFeelingKey(key: string): boolean {
+  return AFFECTION_KEY_ALIASES.has(key.toLowerCase().trim());
+}
 
 export function normalizeFeelingKey(key: string): EmotionKey | null {
   const normalized = key.toLowerCase().trim();
@@ -74,13 +90,19 @@ export function scoresFromFeelings(feelings: EntryFeeling[]): EmotionScores {
   const scores: EmotionScores = {};
 
   for (const feeling of feelings) {
+    const value = normalizeIntensity(feeling.intensity);
+
+    if (isAffectionFeelingKey(feeling.key)) {
+      scores.positive = Math.max(scores.positive ?? 0, value);
+      continue;
+    }
+
     const key = normalizeFeelingKey(feeling.key);
 
     if (!key) {
       continue;
     }
 
-    const value = normalizeIntensity(feeling.intensity);
     scores[key] = Math.max(scores[key] ?? 0, value);
   }
 
@@ -149,6 +171,19 @@ export function groupFeelingsByColumn(
   const seenPerColumn = new Map<EmotionColumnId, Set<string>>();
 
   for (const feeling of feelings) {
+    if (isAffectionFeelingKey(feeling.key)) {
+      const seen = seenPerColumn.get("positive") ?? new Set<string>();
+      const dedupeKey = feeling.label.toLowerCase();
+
+      if (!seen.has(dedupeKey)) {
+        seen.add(dedupeKey);
+        seenPerColumn.set("positive", seen);
+        grouped.positive.push(feeling);
+      }
+
+      continue;
+    }
+
     const key = normalizeFeelingKey(feeling.key);
 
     if (!key) {
@@ -208,7 +243,7 @@ export function scoreForColumn(
     case "joy":
       return averages.joy ?? 0;
     case "positive":
-      return Math.max(averages.joy ?? 0, averages.surprise ?? 0);
+      return averages.positive ?? 0;
     case "anger":
       return averages.anger ?? 0;
     case "surprise":
