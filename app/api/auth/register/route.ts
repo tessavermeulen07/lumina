@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getRegisterErrorMessage,
   parseRegisterRequestBody,
+  validateRegistrationInviteCode,
 } from "@/lib/auth/register";
 
 export async function POST(request: Request) {
@@ -21,11 +22,21 @@ export async function POST(request: Request) {
     name?: string;
     email?: string;
     password?: string;
+    inviteCode?: string;
   };
   const parsed = parseRegisterRequestBody(body);
 
   if ("error" in parsed) {
     return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+  }
+
+  const inviteValidation = validateRegistrationInviteCode(parsed.inviteCode);
+
+  if (!inviteValidation.ok) {
+    return NextResponse.json(
+      { error: inviteValidation.error },
+      { status: inviteValidation.status },
+    );
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {

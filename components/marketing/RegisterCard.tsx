@@ -17,6 +17,13 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return new URLSearchParams(window.location.search).get("code") ?? "";
+  });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,6 +43,7 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
         name: trimmedName,
         email,
         password,
+        inviteCode,
       }),
     });
 
@@ -118,6 +126,15 @@ export function RegisterCard({ onAccountCreated }: Readonly<RegisterCardProps>) 
       </h2>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <Input
+          autoComplete="off"
+          id="register-invite-code"
+          label="Uitnodigingscode"
+          onChange={(event) => setInviteCode(event.target.value)}
+          placeholder="Code die je hebt ontvangen"
+          required
+          value={inviteCode}
+        />
         <Input
           autoComplete="name"
           id="register-name"
