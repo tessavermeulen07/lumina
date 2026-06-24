@@ -40,7 +40,7 @@ export function Header() {
             <Button href="/registreren" variant="primary">
               Probeer gratis
             </Button>
-            <Button href="/vandaag" variant="dark">
+            <Button href="/inloggen" variant="dark">
               Inloggen
             </Button>
           </div>

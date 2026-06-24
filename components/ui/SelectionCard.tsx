@@ -2,6 +2,7 @@ interface SelectionCardProps {
   label: string;
   description?: string;
   isSelected: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -9,6 +10,7 @@ export function SelectionCard({
   label,
   description,
   isSelected,
+  disabled = false,
   onClick,
 }: Readonly<SelectionCardProps>) {
   const baseClasses =
@@ -20,7 +22,8 @@ export function SelectionCard({
   return (
     <button
       aria-pressed={isSelected}
-      className={`${baseClasses} ${stateClasses}`}
+      className={`${baseClasses} ${stateClasses} disabled:cursor-not-allowed disabled:opacity-60`}
+      disabled={disabled}
       onClick={onClick}
       type="button"
     >

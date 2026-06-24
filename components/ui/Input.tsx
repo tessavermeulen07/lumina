@@ -4,6 +4,7 @@ const fieldClassName =
 interface InputProps {
   id: string;
   label: string;
+  labelAction?: React.ReactNode;
   type?: "text" | "email" | "password";
   placeholder?: string;
   autoComplete?: string;
@@ -16,6 +17,7 @@ interface InputProps {
 export function Input({
   id,
   label,
+  labelAction,
   type = "text",
   placeholder,
   autoComplete,
@@ -26,12 +28,12 @@ export function Input({
 }: Readonly<InputProps>) {
   return (
     <div>
-      <label
-        className="mb-1.5 block text-sm font-medium text-foreground"
-        htmlFor={id}
-      >
-        {label}
-      </label>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label className="text-sm font-medium text-foreground" htmlFor={id}>
+          {label}
+        </label>
+        {labelAction}
+      </div>
       <input
         autoComplete={autoComplete}
         className={fieldClassName}

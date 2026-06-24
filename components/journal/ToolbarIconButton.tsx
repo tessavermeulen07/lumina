@@ -9,6 +9,7 @@ interface ToolbarIconButtonProps {
   onClick?: () => void;
   isActive?: boolean;
   ariaPressed?: boolean;
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ export function ToolbarIconButton({
   onClick,
   isActive = false,
   ariaPressed,
+  disabled = false,
   children,
 }: Readonly<ToolbarIconButtonProps>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -46,11 +48,14 @@ export function ToolbarIconButton({
         ref={buttonRef}
         aria-label={label}
         aria-pressed={ariaPressed}
-        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${
-          isActive
-            ? "bg-lumina-500/15 text-lumina-700"
-            : "text-lumina-500 hover:bg-lumina-500/10 hover:text-lumina-700"
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${
+          disabled
+            ? "cursor-not-allowed text-lumina-500/40"
+            : isActive
+              ? "bg-lumina-500/15 text-lumina-700"
+              : "text-lumina-500 hover:bg-lumina-500/10 hover:text-lumina-700"
         }`}
+        disabled={disabled}
         onBlur={hideTooltip}
         onClick={onClick}
         onFocus={showTooltip}
@@ -85,7 +90,7 @@ export function ToolbarSeparator() {
   return (
     <span
       aria-hidden="true"
-      className="mx-0.5 h-5 w-px shrink-0 bg-lumina-500/25"
+      className="mx-0.5 h-7 w-px shrink-0 bg-lumina-500/25"
     />
   );
 }

@@ -1,9 +1,15 @@
 import { DailyJournalCarousel } from "@/components/dashboard/DailyJournalCarousel";
 import { PromptCard } from "@/components/dashboard/PromptCard";
 import { Button } from "@/components/ui/Button";
-import { samplePrompts } from "@/lib/mock/dashboard";
+import type { Question } from "@/lib/types/database";
 
-export function DailyJournalSection() {
+interface DailyJournalSectionProps {
+  prompts: Question[];
+}
+
+export function DailyJournalSection({
+  prompts,
+}: Readonly<DailyJournalSectionProps>) {
   return (
     <DailyJournalCarousel title="Dagelijkse reflectie">
       <article className="min-w-[280px] max-w-[320px] shrink-0 snap-start rounded-2xl border border-lumina-500/25 bg-surface p-6">
@@ -19,8 +25,8 @@ export function DailyJournalSection() {
         </div>
       </article>
 
-      {samplePrompts.map((prompt) => (
-        <PromptCard key={prompt.id} text={prompt.text} />
+      {prompts.map((prompt) => (
+        <PromptCard key={prompt.id} text={prompt.question_text} />
       ))}
     </DailyJournalCarousel>
   );

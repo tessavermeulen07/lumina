@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ideas
 .idea/
+
+# cursor (plans are tracked; rules stay local)
+.cursor/rules/

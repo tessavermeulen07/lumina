@@ -1,4 +1,4 @@
-const iconClassName = "h-4 w-4";
+const iconClassName = "h-5 w-5";
 
 function SvgIcon({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -436,6 +436,25 @@ export function LockIcon() {
         d="M8 11V8a4 4 0 018 0v3"
         stroke="currentColor"
         strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+    </SvgIcon>
+  );
+}
+
+export function SaveIcon() {
+  return (
+    <SvgIcon>
+      <path
+        d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M17 21v-8H7v8M7 3v5h8"
+        stroke="currentColor"
+        strokeLinejoin="round"
         strokeWidth="1.5"
       />
     </SvgIcon>
