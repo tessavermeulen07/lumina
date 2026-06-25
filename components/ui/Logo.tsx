@@ -10,9 +10,9 @@ export function Logo({ className = "h-8 w-8" }: Readonly<LogoProps>) {
       alt=""
       aria-hidden
       className={className}
-      height={32}
+      height={48}
       src="/logo-lumina-circle.png"
-      width={32}
+      width={48}
     />
   );
 }

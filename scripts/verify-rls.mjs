@@ -42,6 +42,8 @@ const tables = [
   "habit_logs",
   "ai_insights",
   "weekly_reports",
+  "reflection_prompts",
+  "dashboard_reflection_cache",
 ];
 
 let passed = 0;

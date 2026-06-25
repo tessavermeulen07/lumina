@@ -40,6 +40,8 @@ const tables = [
   "ai_insights",
   "weekly_reports",
   "questions",
+  "reflection_prompts",
+  "dashboard_reflection_cache",
 ];
 
 async function checkTable(table) {

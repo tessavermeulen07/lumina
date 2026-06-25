@@ -18,7 +18,7 @@ import {
   hasUserText,
   type EntryBlock,
 } from "@/lib/types/entry-blocks";
-import type { EntryAnalysis } from "@/lib/types/database";
+import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const SAVED_STATUS_RESET_MS = 2000;
@@ -29,12 +29,16 @@ interface WritingAreaProps {
   hint: string;
   initialEntryId?: string | null;
   initialBlocks?: EntryBlock[];
+  reflectionPeriod?: ReflectionPeriod;
+  reflectionPromptId?: string;
 }
 
 export function WritingArea({
   hint,
   initialEntryId = null,
   initialBlocks,
+  reflectionPeriod,
+  reflectionPromptId,
 }: Readonly<WritingAreaProps>) {
   const [blocks, setBlocks] = useState<EntryBlock[]>(
     initialBlocks ?? [createLocalUserBlock()],
@@ -65,6 +69,13 @@ export function WritingArea({
     new Map(),
   );
   const lastSavedContentRef = useRef<Map<string, string>>(new Map());
+  const reflectionPeriodRef = useRef(reflectionPeriod);
+  const reflectionPromptIdRef = useRef(reflectionPromptId);
+
+  useEffect(() => {
+    reflectionPeriodRef.current = reflectionPeriod;
+    reflectionPromptIdRef.current = reflectionPromptId;
+  }, [reflectionPeriod, reflectionPromptId]);
 
   const showToolbar = hasUserText(blocks) && !reviewAnalysis;
   const canSave = hasUserText(blocks) && !isFinalizing;
@@ -111,7 +122,9 @@ export function WritingArea({
 
       try {
         if (!entryIdRef.current) {
-          const result = await createEntryWithUserBlock(trimmed);
+          const result = await createEntryWithUserBlock(trimmed, {
+            reflectionPeriod: reflectionPeriodRef.current,
+          });
 
           if ("error" in result) {
             setDraftStatus("error");
@@ -209,6 +222,8 @@ export function WritingArea({
     const result = await finalizeEntry({
       entryId: entryIdRef.current ?? undefined,
       blocks,
+      reflectionPeriod: reflectionPeriodRef.current,
+      reflectionPromptId: reflectionPromptIdRef.current,
     });
 
     setIsFinalizing(false);
@@ -298,7 +313,9 @@ export function WritingArea({
   return (
     <>
       <section className="mx-auto flex min-h-[70vh] max-w-prose flex-col justify-center px-2">
-        <p className="font-serif text-lg leading-relaxed text-muted">{hint}</p>
+        <p className="whitespace-pre-line font-serif text-lg leading-relaxed text-muted">
+          {hint}
+        </p>
 
         <JournalFlow
           aiError={aiError}

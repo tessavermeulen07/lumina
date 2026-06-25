@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   EntryAiResponse,
   EntryUserBlock,
+  ReflectionPeriod,
 } from "@/lib/types/database";
 import type { AiBlock, EntryBlock, UserBlock } from "@/lib/types/entry-blocks";
 
@@ -80,6 +81,7 @@ export async function listEntryBlocks(entryId: string): Promise<EntryBlock[]> {
 
 export async function createEntryWithUserBlock(
   content: string,
+  options?: { reflectionPeriod?: ReflectionPeriod },
 ): Promise<{ entryId: string; block: UserBlock } | { error: string }> {
   const user = await getAuthenticatedUser();
   const supabase = await createClient();
@@ -91,7 +93,11 @@ export async function createEntryWithUserBlock(
 
   const { data: entry, error: entryError } = await supabase
     .from("entries")
-    .insert({ user_id: user.id, content: trimmed })
+    .insert({
+      user_id: user.id,
+      content: trimmed,
+      reflection_period: options?.reflectionPeriod ?? null,
+    })
     .select("id")
     .single();
 

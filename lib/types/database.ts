@@ -16,6 +16,8 @@ export type HabitType = "habit" | "intention";
 
 export type HabitLogStatus = "completed" | "skipped" | "failed";
 
+export type ReflectionPeriod = "ochtend" | "avond";
+
 export interface Profile {
   id: string;
   username: string;
@@ -32,6 +34,7 @@ export interface Entry {
   user_id: string;
   content: string;
   summary: string | null;
+  reflection_period: ReflectionPeriod | null;
   created_at: string;
 }
 
@@ -143,6 +146,26 @@ export interface Question {
   question_text: string;
 }
 
+export interface ReflectionPrompt {
+  id: string;
+  user_id: string;
+  topic: string;
+  question: string;
+  is_bookmarked: boolean;
+  prompt_date: string | null;
+  entry_id: string | null;
+  bookmarked_at: string | null;
+  created_at: string;
+}
+
+export interface DashboardReflectionCache {
+  user_id: string;
+  cache_date: string;
+  cache_key: string;
+  payload: Record<string, unknown>;
+  generated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -225,6 +248,29 @@ export interface Database {
         Row: Question;
         Insert: Omit<Question, "id"> & { id?: string };
         Update: Partial<Omit<Question, "id">>;
+      };
+      reflection_prompts: {
+        Row: ReflectionPrompt;
+        Insert: Omit<
+          ReflectionPrompt,
+          "id" | "created_at" | "is_bookmarked" | "bookmarked_at" | "entry_id"
+        > & {
+          id?: string;
+          created_at?: string;
+          is_bookmarked?: boolean;
+          bookmarked_at?: string | null;
+          entry_id?: string | null;
+        };
+        Update: Partial<Omit<ReflectionPrompt, "id" | "user_id">>;
+      };
+      dashboard_reflection_cache: {
+        Row: DashboardReflectionCache;
+        Insert: Omit<DashboardReflectionCache, "generated_at"> & {
+          generated_at?: string;
+        };
+        Update: Partial<
+          Omit<DashboardReflectionCache, "user_id" | "cache_date" | "cache_key">
+        >;
       };
     };
   };
