@@ -97,14 +97,6 @@ export function LoginCard() {
             autoComplete="current-password"
             id="login-password"
             label="Wachtwoord"
-            labelAction={
-              <Link
-                className="text-sm font-medium text-lumina-500 transition-colors hover:text-lumina-700"
-                href="/wachtwoord-vergeten"
-              >
-                Wachtwoord vergeten?
-              </Link>
-            }
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Je wachtwoord"
             required
@@ -131,11 +123,20 @@ export function LoginCard() {
         <p className="mt-6 text-center text-sm text-muted">
           Nieuw bij Lumina?{" "}
           <Link
-            className="font-medium text-lumina-500 transition-colors hover:text-lumina-700"
+            className="font-semibold text-lumina-700 underline decoration-lumina-500/40 underline-offset-2 transition-colors hover:text-lumina-900 hover:decoration-lumina-700"
             href="/registreren"
             onClick={(event) => event.stopPropagation()}
           >
             Registreer hier
+          </Link>
+        </p>
+
+        <p className="mt-3 text-center text-sm text-muted">
+          <Link
+            className="font-medium text-lumina-500 transition-colors hover:text-lumina-700"
+            href="/wachtwoord-vergeten"
+          >
+            Wachtwoord vergeten?
           </Link>
         </p>
       </div>

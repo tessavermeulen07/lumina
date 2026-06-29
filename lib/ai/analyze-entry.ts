@@ -7,23 +7,44 @@ import { countWords } from "@/lib/data/week-utils";
 import type { EntryAnalysis } from "@/lib/types/database";
 import type { EntryAnalysisData } from "@/lib/types/entry-analysis";
 
-const ANALYSIS_PROMPT = `Je bent Lumina, een reflectiecoach. Analyseer de journal entry van de gebruiker.
-Antwoord in het Nederlands. Wees warm en helder.
+const ANALYSIS_PROMPT = (coachingStyleInstruction: string) => `Je bent Lumina, een scherpzinnige en intuïtieve reflectiecoach.
+Analyseer de journal entry van de gebruiker en  extraheer gestructureerde data.
 
-Geef JSON met:
-- title: korte titel (max 8 woorden)
-- summary: korte samenvatting voor een overzicht (2-3 zinnen)
-- reflection_text: uitgebreide reflectie op de entry (2-4 alinea's)
-- key_insight: één kernzin met het belangrijkste inzicht
-- english_plain_text: getrouwe Engelse vertaling van alleen de user-tekst (voor sentiment-analyse, niet tonen aan gebruiker)
-- feelings: array van { key, label, emoji, intensity } — max 5 gevoelens
-  - key: verplicht één van sadness, fear, joy, anger, surprise, disgust, love
-  - love: alleen voor affectie en verbondenheid (verliefd, geliefd, dankbaar) — niet voor algemene blijdschap
-  - label: Nederlandse beschrijving (bijv. Verdrietig, Bezorgd, Verliefd)
-  - emoji: passend bij het gevoel
-  - intensity: getal 1-5 (5 = sterkst)
-- persons: array van { name, mention_count } — personen die genoemd worden
-- themes: array van { name } — thema's in de tekst, max 6`;
+STIJL: ${coachingStyleInstruction}
+Schrijf de 'reflection_text' strikt vanuit dit profiel. Stel geen medische diagnoses.
+
+STRICT JSON SCHEMA:
+{
+  "title": "Korte, betekenisvolle titel die de kern van de situatie dekt (max 6 woorden)",
+  "summary": "Een beknopte samenvatting van de feiten en situatie voor het overzichtelijk dashboard (2-3 zinnen)",
+  "reflection_text": " Een diepgaande, persoonlijke reflectie en spiegeling gericht aan de gebruiker (2-4 alinea's). Gebruik
+  je actieve stijlprofiel om de gebruiker te ondersteunen en eventuele denkpatronen mild uit te dagen.",
+  "key_insight": "Eén krachtige kernzin die fungeert als het belangrijkste inzicht of de 'takeaway' van deze entry.",
+  "english_plain_text": "Een zuivere, getrouwe Engelse vertaling van alléén de oorspronkelijke tekst van de gebruiker. 
+  Verwijder emoticons en HTML. Dit wordt gebruikt voor sentiment-API's.",
+  "feelings": [
+    {
+      "key": "Verplicht exact één van deze 7 strings: 'sadness', 'fear', 'joy', 'anger', 'surprise', 'disgust', 'love'. (Gebruik
+      'love' voor affectie, verbondenheid, diepe dankbaarheid, verliefdheid, liefde, etc.; niet voor algemene blijdschap).",
+      "label": "De Nederlandse vertaling of nuance (bijv. 'Gedemotiveerd', 'Angstig', 'Dankbaar'). Begin met hoofdletters.",
+      "emoji": "Een passend emoji voor het gevoel (bijv. 💔, 😰, 😊, 😡, 😮, 😞, 💖).",
+      intensity: 1
+    }
+  ],
+  "persons": [
+    {
+      "name": "Voornaam of rol van een genoemd persoon (bijv. 'Manager', 'Lisa', 'Pap', 'Mam'). Schrijf met een hoofdletter.",
+      "mention_count": 1,
+    }
+  ],
+  "themes": [
+  {
+    "Overkoepelend thema in één of twee woorden (bijv. 'Werk', 'Relaties', Grenzen' 'Sociale Interactie'). Maximaal
+    4 thema's per entry. Schrijf met een hoofdletter."
+  }
+  ]
+}
+`;
 
 interface RawAnalysis {
   title?: string;
