@@ -153,3 +153,7 @@ export function resolveCoachStyle(
 ): AiCoachStyle {
   return preference ?? "empathetic";
 }
+
+export function getCoachStyleInstruction(style: AiCoachStyle): string {
+  return COACH_STYLE_PROMPTS[style];
+}

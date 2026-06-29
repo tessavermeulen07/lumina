@@ -1,6 +1,11 @@
 import OpenAI from "openai";
+import {
+  getCoachStyleInstruction,
+  resolveCoachStyle,
+} from "@/lib/ai/agent-prompt";
 import { mergeEmotionScores } from "@/lib/ai/emotion-scores";
 import { analyzeEntrySentiment } from "@/lib/ai/twinword";
+import { getProfile } from "@/lib/auth/get-profile";
 import { buildEntryThreadContext } from "@/lib/entries/entry-thread";
 import { listEntryBlocks } from "@/lib/entries/entry-blocks";
 import { countWords } from "@/lib/data/week-utils";
@@ -79,11 +84,16 @@ export async function analyzeEntry(
 
   const wordCount = countWords(userText);
   const openai = new OpenAI({ apiKey });
+  const profile = await getProfile();
+  const coachStyle = resolveCoachStyle(profile.ai_persona_preference);
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: ANALYSIS_PROMPT },
+      {
+        role: "system",
+        content: ANALYSIS_PROMPT(getCoachStyleInstruction(coachStyle)),
+      },
       {
         role: "user",
         content: `Analyseer deze entry:\n\n${thread}`,
