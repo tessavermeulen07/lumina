@@ -13,12 +13,16 @@ import {
   syncEntryContent,
 } from "@/lib/entries/entry-blocks";
 import { createClient } from "@/lib/supabase/server";
-import type { EntryAnalysis } from "@/lib/types/database";
+import { linkPromptToEntry } from "@/lib/dashboard/reflection-prompt-actions";
+import { clearReflectionCacheForToday } from "@/lib/dashboard/reflection-cache";
+import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
 
 export async function finalizeEntry(input: {
   entryId?: string;
   blocks: EntryBlock[];
+  reflectionPeriod?: ReflectionPeriod;
+  reflectionPromptId?: string;
 }): Promise<{ analysis: EntryAnalysis } | { error: string }> {
   await getAuthenticatedUser();
   let entryId = input.entryId;
@@ -32,7 +36,9 @@ export async function finalizeEntry(input: {
   if (!entryId) {
     const firstContent = userBlocks.find((b) => b.content.trim())?.content ?? "";
 
-    const created = await createEntryWithUserBlock(firstContent);
+    const created = await createEntryWithUserBlock(firstContent, {
+      reflectionPeriod: input.reflectionPeriod,
+    });
 
     if ("error" in created) {
       return { error: created.error };
@@ -52,6 +58,14 @@ export async function finalizeEntry(input: {
   }
 
   await syncEntryContent(entryId);
+
+  if (input.reflectionPeriod && input.entryId) {
+    const supabaseForPeriod = await createClient();
+    await supabaseForPeriod
+      .from("entries")
+      .update({ reflection_period: input.reflectionPeriod })
+      .eq("id", entryId);
+  }
 
   const analysisResult = await analyzeEntry(entryId);
 
@@ -87,6 +101,14 @@ export async function finalizeEntry(input: {
         { onConflict: "entry_id" },
       );
     }
+  }
+
+  if (input.reflectionPromptId) {
+    await linkPromptToEntry(input.reflectionPromptId, entryId);
+  }
+
+  if (input.reflectionPeriod) {
+    await clearReflectionCacheForToday();
   }
 
   revalidatePath("/vandaag");

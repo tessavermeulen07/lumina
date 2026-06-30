@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
+import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { createClient } from "@/lib/supabase/client";
 import { coachOptions } from "@/lib/constants/onboarding";
 import { updateProfile } from "@/lib/profile/update-profile";
@@ -126,6 +127,8 @@ export function ProfileForm({
           {isPending ? "Opslaan…" : "Opslaan"}
         </Button>
       </form>
+
+      {email ? <ChangePasswordSection email={email} /> : null}
 
       <section className="border-t border-lumina-500/15 pt-8">
         <h2 className="text-lg font-semibold text-foreground">Account</h2>

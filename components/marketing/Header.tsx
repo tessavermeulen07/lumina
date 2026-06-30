@@ -7,8 +7,8 @@ export function Header() {
     <header className="sticky top-0 z-10 w-full border-b border-lumina-500/10 bg-background/80 backdrop-blur-sm">
       <div className="flex w-full items-center px-6 py-4 md:px-10 lg:px-14">
         <Link className="flex shrink-0 items-center gap-2" href="/">
-          <Logo />
-          <span className="text-lg font-semibold text-foreground">Lumina</span>
+          <Logo className="h-12 w-12" />
+          <span className="text-xl font-semibold text-foreground">Lumina</span>
         </Link>
 
         <div className="ml-auto flex flex-wrap items-center justify-end gap-6 md:gap-10">

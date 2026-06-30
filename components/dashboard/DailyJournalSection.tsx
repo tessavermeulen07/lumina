@@ -1,33 +1,44 @@
+import { CheckInCard } from "@/components/dashboard/CheckInCard";
 import { DailyJournalCarousel } from "@/components/dashboard/DailyJournalCarousel";
-import { PromptCard } from "@/components/dashboard/PromptCard";
-import { Button } from "@/components/ui/Button";
-import type { Question } from "@/lib/types/database";
+import { FollowUpPromptCard } from "@/components/dashboard/FollowUpPromptCard";
+import type {
+  DailyCheckInData,
+  FollowUpPromptCardData,
+} from "@/lib/types/dashboard-reflection";
 
 interface DailyJournalSectionProps {
-  prompts: Question[];
+  checkInData: DailyCheckInData;
+  followUpPrompts: FollowUpPromptCardData[];
 }
 
 export function DailyJournalSection({
-  prompts,
+  checkInData,
+  followUpPrompts,
 }: Readonly<DailyJournalSectionProps>) {
   return (
-    <DailyJournalCarousel title="Dagelijkse reflectie">
-      <article className="min-w-[280px] max-w-[320px] shrink-0 snap-start rounded-2xl border border-lumina-500/25 bg-surface p-6">
-        <p className="text-sm font-medium text-lumina-500">Dagelijkse check-in</p>
-        <p className="mt-2 text-lg text-foreground">Hoe voel je je vandaag?</p>
-        <p className="mt-2 leading-relaxed text-muted">
-          Neem een moment om bij jezelf te checken. Een paar zinnen zijn genoeg.
-        </p>
-        <div className="mt-4">
-          <Button href="/schrijf" variant="outline">
-            Schrijf je check-in
-          </Button>
+    <div className="space-y-10">
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">
+          Dagelijkse reflectie
+        </h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <CheckInCard data={checkInData.ochtend} />
+          <CheckInCard data={checkInData.avond} />
         </div>
-      </article>
+      </section>
 
-      {prompts.map((prompt) => (
-        <PromptCard key={prompt.id} text={prompt.question_text} />
-      ))}
-    </DailyJournalCarousel>
+      <DailyJournalCarousel title="Reflecteer verder">
+        {followUpPrompts.length === 0 ? (
+          <p className="min-w-[200px] text-sm text-muted">
+            Schrijf je eerste reflectie om persoonlijke vervolgvragen te
+            ontvangen.
+          </p>
+        ) : (
+          followUpPrompts.map((prompt) => (
+            <FollowUpPromptCard key={prompt.id} prompt={prompt} />
+          ))
+        )}
+      </DailyJournalCarousel>
+    </div>
   );
 }
