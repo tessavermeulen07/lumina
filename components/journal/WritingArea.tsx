@@ -2,10 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EntryAnalysisReview } from "@/components/journal/EntryAnalysisReview";
+import {
+  EditorBridgeProvider,
+  useEditorBridge,
+} from "@/components/journal/EditorBridge";
 import { JournalFlow } from "@/components/journal/JournalFlow";
 import { ImageUploadModal } from "@/components/journal/ImageUploadModal";
 import { WritingToolbar } from "@/components/journal/WritingToolbar";
 import { respondToEntryAction } from "@/lib/ai/respond-to-entry";
+import { ensureEntryDraft } from "@/lib/entries/ensure-entry-draft";
 import {
   createEntryWithUserBlock,
   saveUserBlock,
@@ -18,6 +23,8 @@ import {
   hasUserText,
   type EntryBlock,
 } from "@/lib/types/entry-blocks";
+import { normalizeEntryImageHtml } from "@/lib/utils/entry-images";
+import { isRichTextEmpty } from "@/lib/utils/rich-text";
 import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 
 const AUTO_SAVE_DELAY_MS = 1500;
@@ -33,13 +40,14 @@ interface WritingAreaProps {
   reflectionPromptId?: string;
 }
 
-export function WritingArea({
+function WritingAreaContent({
   hint,
   initialEntryId = null,
   initialBlocks,
   reflectionPeriod,
   reflectionPromptId,
 }: Readonly<WritingAreaProps>) {
+  const { insertImage } = useEditorBridge();
   const [blocks, setBlocks] = useState<EntryBlock[]>(
     initialBlocks ?? [createLocalUserBlock()],
   );
@@ -77,7 +85,7 @@ export function WritingArea({
     reflectionPromptIdRef.current = reflectionPromptId;
   }, [reflectionPeriod, reflectionPromptId]);
 
-  const showToolbar = hasUserText(blocks) && !reviewAnalysis;
+  const showToolbar = !reviewAnalysis;
   const canSave = hasUserText(blocks) && !isFinalizing;
 
   useEffect(() => {
@@ -106,9 +114,10 @@ export function WritingArea({
 
   const persistUserBlock = useCallback(
     async (blockId: string, content: string) => {
-      const trimmed = content.trim();
+      const normalizedContent = normalizeEntryImageHtml(content);
+      const trimmed = normalizedContent.trim();
 
-      if (!trimmed || isSavingRef.current) {
+      if (isRichTextEmpty(trimmed) || isSavingRef.current) {
         return;
       }
 
@@ -149,7 +158,7 @@ export function WritingArea({
           const result = await saveUserBlock(
             entryIdRef.current,
             blockId,
-            content,
+            trimmed,
           );
 
           if ("error" in result) {
@@ -185,17 +194,19 @@ export function WritingArea({
     const userBlocks = blocks.filter((block) => block.type === "user");
 
     for (const block of userBlocks) {
-      if (block.content.trim()) {
+      if (!isRichTextEmpty(block.content)) {
         await persistUserBlock(block.id, block.content);
       }
     }
   }
 
   function handleUserBlockChange(blockId: string, content: string) {
+    const normalizedContent = normalizeEntryImageHtml(content);
+
     setBlocks((current) =>
       current.map((block) =>
         block.type === "user" && block.id === blockId
-          ? { ...block, content }
+          ? { ...block, content: normalizedContent }
           : block,
       ),
     );
@@ -207,10 +218,56 @@ export function WritingArea({
     }
 
     const timeoutId = setTimeout(() => {
-      void persistUserBlock(blockId, content);
+      void persistUserBlock(blockId, normalizedContent);
     }, AUTO_SAVE_DELAY_MS);
 
     saveTimeoutsRef.current.set(blockId, timeoutId);
+  }
+
+  async function handleEnsureEntry(): Promise<string> {
+    if (entryIdRef.current) {
+      return entryIdRef.current;
+    }
+
+    const activeBlock = getActiveUserBlock(blocks);
+    const result = await ensureEntryDraft({
+      reflectionPeriod: reflectionPeriodRef.current,
+    });
+
+    if ("error" in result) {
+      throw new Error(result.error);
+    }
+
+    entryIdRef.current = result.entryId;
+    setEntryId(result.entryId);
+
+    if (activeBlock) {
+      setBlocks((current) =>
+        current.map((block) =>
+          block.type === "user" && block.id === activeBlock.id
+            ? { ...result.block, content: activeBlock.content }
+            : block,
+        ),
+      );
+      lastSavedContentRef.current.set(
+        result.block.id,
+        activeBlock.content.trim(),
+      );
+    } else {
+      setBlocks([result.block]);
+    }
+
+    return result.entryId;
+  }
+
+  function handleImageInserted({
+    src,
+    storagePath,
+  }: {
+    src: string;
+    storagePath: string;
+  }) {
+    insertImage({ src, storagePath });
   }
 
   async function handleFinalize() {
@@ -265,7 +322,7 @@ export function WritingArea({
     const activeBlock = getActiveUserBlock(blocks);
     const activeContent = activeBlock?.content.trim() ?? "";
 
-    if (!activeContent) {
+    if (isRichTextEmpty(activeContent)) {
       setAiError("Schrijf eerst iets voordat je AI gebruikt.");
       return;
     }
@@ -350,9 +407,20 @@ export function WritingArea({
       </section>
 
       <ImageUploadModal
+        entryId={entryId}
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
+        onEnsureEntry={handleEnsureEntry}
+        onImageInserted={handleImageInserted}
       />
     </>
+  );
+}
+
+export function WritingArea(props: Readonly<WritingAreaProps>) {
+  return (
+    <EditorBridgeProvider>
+      <WritingAreaContent {...props} />
+    </EditorBridgeProvider>
   );
 }

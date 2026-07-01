@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { EntryAnalysis, EmotionScores } from "@/lib/types/database";
 import type { EntryFeeling, EntryPerson } from "@/lib/types/entry-analysis";
+import { getEntryThemeLabel } from "@/lib/types/entry-analysis";
 
 export interface WordsPerDay {
   date: string;
@@ -98,13 +99,19 @@ function aggregateThemes(analyses: EntryAnalysis[]): {
 
   for (const analysis of analyses) {
     for (const theme of analysis.themes) {
-      const key = theme.name.toLowerCase();
+      const label = getEntryThemeLabel(theme);
+
+      if (!label || label === "Thema") {
+        continue;
+      }
+
+      const key = label.toLowerCase();
       const existing = map.get(key);
 
       if (existing) {
         existing.count += 1;
       } else {
-        map.set(key, { name: theme.name, count: 1 });
+        map.set(key, { name: label, count: 1 });
       }
     }
   }

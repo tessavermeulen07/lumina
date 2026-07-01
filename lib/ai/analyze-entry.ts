@@ -9,8 +9,10 @@ import { getProfile } from "@/lib/auth/get-profile";
 import { buildEntryThreadContext } from "@/lib/entries/entry-thread";
 import { listEntryBlocks } from "@/lib/entries/entry-blocks";
 import { countWords } from "@/lib/data/week-utils";
+import { stripRichTextToPlain } from "@/lib/utils/rich-text";
 import type { EntryAnalysis } from "@/lib/types/database";
 import type { EntryAnalysisData } from "@/lib/types/entry-analysis";
+import { normalizeEntryThemes } from "@/lib/types/entry-analysis";
 
 const ANALYSIS_PROMPT = (coachingStyleInstruction: string) => `Je bent Lumina, een scherpzinnige en intuïtieve reflectiecoach.
 Analyseer de journal entry van de gebruiker en  extraheer gestructureerde data.
@@ -75,7 +77,7 @@ export async function analyzeEntry(
   const thread = buildEntryThreadContext(blocks);
   const userText = blocks
     .filter((b) => b.type === "user")
-    .map((b) => b.content)
+    .map((b) => stripRichTextToPlain(b.content))
     .join("\n\n");
 
   if (!userText.trim()) {
@@ -133,7 +135,7 @@ export async function analyzeEntry(
     key_insight: parsed.key_insight?.trim() || "",
     feelings,
     persons: parsed.persons ?? [],
-    themes: parsed.themes ?? [],
+    themes: normalizeEntryThemes(parsed.themes),
     word_count: wordCount,
     emotion_scores,
   };

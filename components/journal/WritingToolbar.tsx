@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import {
+  useEditorBridge,
+  type FormatId,
+} from "@/components/journal/EditorBridge";
 import { ToolbarCarousel } from "@/components/journal/ToolbarCarousel";
 import {
   ToolbarIconButton,
@@ -155,22 +159,21 @@ export function WritingToolbar({
   onTogglePrivate,
 }: Readonly<WritingToolbarProps>) {
   const [activePanel, setActivePanel] = useState<ToolbarPanel>("main");
-  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+  const {
+    applyFormat,
+    undo,
+    redo,
+    isFormatActive,
+    canUndo,
+    canRedo,
+    hasActiveEditor,
+    revision,
+  } = useEditorBridge();
+
+  void revision;
 
   function togglePanel(panel: ToolbarPanel) {
     setActivePanel((current) => (current === panel ? "main" : panel));
-  }
-
-  function toggleFormat(id: string) {
-    setActiveFormats((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   if (!visible) return null;
@@ -208,9 +211,9 @@ export function WritingToolbar({
               <ImageIcon />
             </ToolbarIconButton>
             <ToolbarIconButton
-              label="Verander style"
+              label="Verander stijl"
               onClick={() => togglePanel("format")}
-              title="Verander style"
+              title="Verander stijl"
             >
               <FormatIcon />
             </ToolbarIconButton>
@@ -267,15 +270,17 @@ export function WritingToolbar({
               <BackIcon />
             </ToolbarIconButton>
             <ToolbarIconButton
+              disabled={!canUndo || !hasActiveEditor}
               label="Ongedaan maken"
-              onClick={() => undefined}
+              onClick={undo}
               title="Ongedaan maken"
             >
               <UndoIcon />
             </ToolbarIconButton>
             <ToolbarIconButton
+              disabled={!canRedo || !hasActiveEditor}
               label="Opnieuw"
-              onClick={() => undefined}
+              onClick={redo}
               title="Opnieuw"
             >
               <RedoIcon />
@@ -284,10 +289,11 @@ export function WritingToolbar({
             {formatItems.map(({ id, label, title, icon: Icon }) => (
               <ToolbarIconButton
                 key={id}
-                ariaPressed={activeFormats.has(id)}
-                isActive={activeFormats.has(id)}
+                ariaPressed={isFormatActive(id as FormatId)}
+                disabled={!hasActiveEditor}
+                isActive={isFormatActive(id as FormatId)}
                 label={label}
-                onClick={() => toggleFormat(id)}
+                onClick={() => applyFormat(id as FormatId)}
                 title={title}
               >
                 <Icon />
