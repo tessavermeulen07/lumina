@@ -15,6 +15,7 @@ import {
 } from "@/lib/entries/entry-blocks";
 import { saveEntryAiResponse } from "@/lib/entries/save-entry-ai-response";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
+import { isRichTextEmpty, stripRichTextToPlain } from "@/lib/utils/rich-text";
 
 export async function respondToEntryAction(input: {
   actionLabel: string;
@@ -32,8 +33,9 @@ export async function respondToEntryAction(input: {
   }
 
   const trimmed = input.activeUserContent.trim();
+  const plainContent = stripRichTextToPlain(trimmed);
 
-  if (!trimmed) {
+  if (isRichTextEmpty(trimmed)) {
     return { error: "Schrijf eerst iets voordat je AI gebruikt." };
   }
 
@@ -72,7 +74,7 @@ export async function respondToEntryAction(input: {
 
   const result = await runLuminaAgent({
     userQuestion: `Help me met: ${input.actionLabel}`,
-    entryContent: trimmed,
+    entryContent: plainContent,
     entryThreadContext: threadContext,
     entryId,
     userId: profile.id,

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { RichTextDisplay } from "@/components/journal/RichTextDisplay";
+import { RichTextEditor } from "@/components/journal/RichTextEditor";
+import { useEditorBridge } from "@/components/journal/EditorBridge";
 import { getToolbarActionLabel } from "@/lib/ai/toolbar-actions";
 import type { ToolbarAiAction } from "@/lib/ai/question-context";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
+import { isRichTextEmpty } from "@/lib/utils/rich-text";
 
 interface JournalFlowProps {
   blocks: EntryBlock[];
@@ -33,7 +36,7 @@ function getActionLabel(action: string): string {
   return action;
 }
 
-function AutoGrowTextarea({
+function EditableUserBlock({
   blockId,
   content,
   autoFocus,
@@ -44,34 +47,16 @@ function AutoGrowTextarea({
   autoFocus?: boolean;
   onChange: (blockId: string, content: string) => void;
 }>) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const element = textareaRef.current;
-
-    if (!element) {
-      return;
-    }
-
-    element.style.height = "auto";
-    element.style.height = `${element.scrollHeight}px`;
-  }, [content]);
-
-  useEffect(() => {
-    if (autoFocus) {
-      textareaRef.current?.focus();
-    }
-  }, [autoFocus, blockId]);
+  const { registerEditor, setActiveBlockId } = useEditorBridge();
 
   return (
-    <textarea
-      ref={textareaRef}
-      aria-label="Jouw reflectie"
+    <RichTextEditor
       autoFocus={autoFocus}
-      className="w-full resize-none overflow-hidden border-0 bg-transparent font-serif text-lg leading-relaxed text-foreground shadow-none outline-none focus:ring-0"
-      onChange={(event) => onChange(blockId, event.target.value)}
-      rows={1}
-      value={content}
+      blockId={blockId}
+      content={content}
+      onChange={onChange}
+      onEditorReady={registerEditor}
+      onFocus={setActiveBlockId}
     />
   );
 }
@@ -90,23 +75,18 @@ export function JournalFlow({
       {blocks.map((block) => {
         if (block.type === "user") {
           if (readOnly) {
-            if (!block.content.trim()) {
+            if (isRichTextEmpty(block.content)) {
               return null;
             }
 
             return (
-              <p
-                className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-foreground"
-                key={block.id}
-              >
-                {block.content}
-              </p>
+              <RichTextDisplay content={block.content} key={block.id} />
             );
           }
 
           return (
             <div key={block.id}>
-              <AutoGrowTextarea
+              <EditableUserBlock
                 autoFocus={block.id === focusBlockId}
                 blockId={block.id}
                 content={block.content}

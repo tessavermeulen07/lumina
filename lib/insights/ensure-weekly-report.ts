@@ -9,6 +9,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { EntryAnalysis, WeeklyReport } from "@/lib/types/database";
 import type { EntryFeeling, EntryPerson } from "@/lib/types/entry-analysis";
+import { getEntryThemeLabel } from "@/lib/types/entry-analysis";
 
 interface EnsureWeeklyReportInput {
   weekStart: Date;
@@ -179,7 +180,13 @@ export async function fetchWeekAnalyses(
     }
 
     for (const theme of analysis.themes) {
-      const key = theme.name.toLowerCase();
+      const label = getEntryThemeLabel(theme);
+
+      if (!label || label === "Thema") {
+        continue;
+      }
+
+      const key = label.toLowerCase();
       themesMap.set(key, (themesMap.get(key) ?? 0) + 1);
     }
 
@@ -200,8 +207,8 @@ export async function fetchWeekAnalyses(
     .map(([name]) => {
       const theme = analyses
         .flatMap((a) => a.themes)
-        .find((t) => t.name.toLowerCase() === name);
-      return theme?.name ?? name;
+        .find((t) => getEntryThemeLabel(t).toLowerCase() === name);
+      return theme ? getEntryThemeLabel(theme) : name;
     });
 
   const persons = [...personsMap.values()].sort(

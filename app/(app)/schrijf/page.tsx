@@ -9,8 +9,9 @@ import {
 } from "@/lib/entries/entry-blocks";
 import { getWritingPrompt } from "@/lib/mock/writing";
 import type { ReflectionPeriod } from "@/lib/types/database";
-import type { WritingPromptType } from "@/lib/types/writing";
 import { notFound, redirect } from "next/navigation";
+
+const DEFAULT_WRITING_HINT = "Wat wil je vandaag nog meer kwijt?";
 
 interface SchrijfPageProps {
   searchParams: Promise<{
@@ -20,13 +21,6 @@ interface SchrijfPageProps {
     vervolg?: string;
   }>;
 }
-
-const validPromptTypes = new Set<WritingPromptType>([
-  "generic",
-  "yesterday",
-  "earlier_today",
-  "first_entry",
-]);
 
 const validReflectionPeriods = new Set<ReflectionPeriod>(["ochtend", "avond"]);
 
@@ -85,12 +79,9 @@ export default async function SchrijfPage({ searchParams }: SchrijfPageProps) {
     );
   }
 
-  const promptType =
-    prompt && validPromptTypes.has(prompt as WritingPromptType)
-      ? (prompt as WritingPromptType)
-      : "yesterday";
+  if (prompt === "first_entry") {
+    return <WritingArea hint={getWritingPrompt().hint} />;
+  }
 
-  const { hint } = getWritingPrompt(promptType);
-
-  return <WritingArea hint={hint} />;
+  return <WritingArea hint={DEFAULT_WRITING_HINT} />;
 }

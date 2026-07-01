@@ -1,10 +1,11 @@
 import type { EntryBlock } from "@/lib/types/entry-blocks";
+import { stripRichTextToPlain } from "@/lib/utils/rich-text";
 
 export function buildEntryThreadContext(blocks: EntryBlock[]): string {
   return blocks
     .map((block) => {
       if (block.type === "user") {
-        return `Gebruiker:\n${block.content.trim()}`;
+        return `Gebruiker:\n${stripRichTextToPlain(block.content).trim()}`;
       }
 
       return `Lumina (${block.action}):\n${block.content.trim()}`;
