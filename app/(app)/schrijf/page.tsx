@@ -42,6 +42,8 @@ export default async function SchrijfPage({ searchParams }: SchrijfPageProps) {
         hint="Ga verder met schrijven."
         initialBlocks={blocksWithTrailing}
         initialEntryId={entry.id}
+        initialIsBookmarked={entry.is_bookmarked}
+        initialIsPrivate={entry.is_private}
       />
     );
   }

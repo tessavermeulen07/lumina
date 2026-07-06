@@ -51,6 +51,8 @@ export async function deleteEntry(entryId: string): Promise<DeleteEntryResult> {
   revalidatePath("/entries");
   revalidatePath("/geschiedenis");
   revalidatePath("/vandaag");
+  revalidatePath("/bewaard");
+  revalidatePath("/inzichten");
 
   return { ok: true };
 }

@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { linkPromptToEntry } from "@/lib/dashboard/reflection-prompt-actions";
 import { clearReflectionCacheForToday } from "@/lib/dashboard/reflection-cache";
+import { isEntryUnlockedForUser } from "@/lib/entries/private-entry-access";
 import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
 
@@ -114,6 +115,7 @@ export async function finalizeEntry(input: {
   revalidatePath("/vandaag");
   revalidatePath("/geschiedenis");
   revalidatePath("/inzichten");
+  revalidatePath("/bewaard");
 
   return { analysis: data as EntryAnalysis };
 }
@@ -133,8 +135,11 @@ export async function getEntryAnalysis(
   return data as EntryAnalysis | null;
 }
 
-export async function getEntryWithMeta(entryId: string) {
-  await getAuthenticatedUser();
+export async function getEntryWithMeta(
+  entryId: string,
+  options?: { ownerBypass?: boolean },
+) {
+  const user = await getAuthenticatedUser();
   const supabase = await createClient();
 
   const [entryResult, blocks, analysis] = await Promise.all([
@@ -147,8 +152,22 @@ export async function getEntryWithMeta(entryId: string) {
     return null;
   }
 
+  const entry = entryResult.data;
+
+  if (entry.user_id !== user.id) {
+    return null;
+  }
+
+  if (
+    entry.is_private &&
+    !options?.ownerBypass &&
+    !(await isEntryUnlockedForUser(entryId, user.id))
+  ) {
+    return null;
+  }
+
   return {
-    entry: entryResult.data,
+    entry,
     blocks,
     analysis,
   };

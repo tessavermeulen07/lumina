@@ -10,6 +10,7 @@ interface ToolbarIconButtonProps {
   isActive?: boolean;
   ariaPressed?: boolean;
   disabled?: boolean;
+  variant?: "default" | "back";
   children: React.ReactNode;
 }
 
@@ -20,6 +21,7 @@ export function ToolbarIconButton({
   isActive = false,
   ariaPressed,
   disabled = false,
+  variant = "default",
   children,
 }: Readonly<ToolbarIconButtonProps>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -42,19 +44,24 @@ export function ToolbarIconButton({
     setTooltipPosition(null);
   }
 
+  const variantClasses =
+    variant === "back"
+      ? disabled
+        ? "cursor-not-allowed bg-lumina-500/40 text-white/60"
+        : "bg-lumina-500 text-white hover:bg-lumina-700"
+      : disabled
+        ? "cursor-not-allowed text-lumina-500/40"
+        : isActive
+          ? "bg-lumina-500/15 text-lumina-700"
+          : "text-lumina-500 hover:bg-lumina-500/10 hover:text-lumina-700";
+
   return (
     <>
       <button
         ref={buttonRef}
         aria-label={label}
         aria-pressed={ariaPressed}
-        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${
-          disabled
-            ? "cursor-not-allowed text-lumina-500/40"
-            : isActive
-              ? "bg-lumina-500/15 text-lumina-700"
-              : "text-lumina-500 hover:bg-lumina-500/10 hover:text-lumina-700"
-        }`}
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${variantClasses}`}
         disabled={disabled}
         onBlur={hideTooltip}
         onClick={onClick}

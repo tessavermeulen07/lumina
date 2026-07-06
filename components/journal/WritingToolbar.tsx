@@ -6,10 +6,7 @@ import {
   type FormatId,
 } from "@/components/journal/EditorBridge";
 import { ToolbarCarousel } from "@/components/journal/ToolbarCarousel";
-import {
-  ToolbarIconButton,
-  ToolbarSeparator,
-} from "@/components/journal/ToolbarIconButton";
+import { ToolbarIconButton } from "@/components/journal/ToolbarIconButton";
 import {
   ActionIcon,
   AiIcon,
@@ -27,7 +24,6 @@ import {
   InsightIcon,
   ItalicIcon,
   LockIcon,
-  MoreIcon,
   NumberedListIcon,
   PatternIcon,
   QuestionIcon,
@@ -42,7 +38,7 @@ import {
   UndoIcon,
 } from "@/components/journal/WritingToolbarIcons";
 
-type ToolbarPanel = "main" | "ai" | "format" | "more";
+type ToolbarPanel = "main" | "ai" | "format";
 type DraftStatus = "idle" | "saving" | "saved" | "error";
 
 interface WritingToolbarProps {
@@ -51,14 +47,14 @@ interface WritingToolbarProps {
   onDeleteEntry: () => void;
   onSave: () => void;
   onAiAction: (label: string) => void;
+  onToggleBookmark: () => void;
+  onOpenPrivateDialog: () => void;
   canSave: boolean;
   isFinalizing: boolean;
   draftStatus: DraftStatus;
   draftError: string | null;
   isBookmarked: boolean;
-  onToggleBookmark: () => void;
   isPrivate: boolean;
-  onTogglePrivate: () => void;
 }
 
 const aiItems = [
@@ -149,14 +145,14 @@ export function WritingToolbar({
   onDeleteEntry,
   onSave,
   onAiAction,
+  onToggleBookmark,
+  onOpenPrivateDialog,
   canSave,
   isFinalizing,
   draftStatus,
   draftError,
   isBookmarked,
-  onToggleBookmark,
   isPrivate,
-  onTogglePrivate,
 }: Readonly<WritingToolbarProps>) {
   const [activePanel, setActivePanel] = useState<ToolbarPanel>("main");
   const {
@@ -204,13 +200,6 @@ export function WritingToolbar({
               <AiIcon />
             </ToolbarIconButton>
             <ToolbarIconButton
-              label="Voeg afbeelding toe"
-              onClick={onOpenImageModal}
-              title="Voeg afbeelding toe"
-            >
-              <ImageIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
               label="Verander stijl"
               onClick={() => togglePanel("format")}
               title="Verander stijl"
@@ -218,22 +207,46 @@ export function WritingToolbar({
               <FormatIcon />
             </ToolbarIconButton>
             <ToolbarIconButton
-              label="Meer opties"
-              onClick={() => togglePanel("more")}
-              title="Meer opties"
+              label="Voeg afbeelding toe"
+              onClick={onOpenImageModal}
+              title="Voeg afbeelding toe"
             >
-              <MoreIcon />
+              <ImageIcon />
             </ToolbarIconButton>
-            <ToolbarSeparator />
+            <ToolbarIconButton
+              ariaPressed={isBookmarked}
+              isActive={isBookmarked}
+              label={isBookmarked ? "Bookmark verwijderen" : "Bookmarken"}
+              onClick={onToggleBookmark}
+              title={isBookmarked ? "Bookmark verwijderen" : "Bookmarken"}
+            >
+              <BookmarkIcon />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              ariaPressed={isPrivate}
+              isActive={isPrivate}
+              label={isPrivate ? "Niet meer privé" : "Privé maken"}
+              onClick={onOpenPrivateDialog}
+              title={isPrivate ? "Niet meer privé" : "Privé maken"}
+            >
+              <LockIcon />
+            </ToolbarIconButton>
+            <ToolbarIconButton
+              label="Entry verwijderen"
+              onClick={onDeleteEntry}
+              title="Entry verwijderen"
+            >
+              <TrashIcon />
+            </ToolbarIconButton>
             <button
-              aria-label="Opslaan"
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-lumina-900 px-4 text-sm font-medium text-white transition-colors hover:bg-lumina-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Naar de analyse"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-lumina-500 text-white transition-colors hover:bg-lumina-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canSave || isFinalizing}
               onClick={onSave}
+              title="Naar de analyse"
               type="button"
             >
               <SaveIcon />
-              {isFinalizing ? "Opslaan…" : "Opslaan"}
             </button>
           </div>
         )}
@@ -244,6 +257,7 @@ export function WritingToolbar({
               label="Terug"
               onClick={() => setActivePanel("main")}
               title="Terug"
+              variant="back"
             >
               <BackIcon />
             </ToolbarIconButton>
@@ -266,6 +280,7 @@ export function WritingToolbar({
               label="Terug"
               onClick={() => setActivePanel("main")}
               title="Terug"
+              variant="back"
             >
               <BackIcon />
             </ToolbarIconButton>
@@ -285,7 +300,6 @@ export function WritingToolbar({
             >
               <RedoIcon />
             </ToolbarIconButton>
-            <ToolbarSeparator />
             {formatItems.map(({ id, label, title, icon: Icon }) => (
               <ToolbarIconButton
                 key={id}
@@ -300,46 +314,6 @@ export function WritingToolbar({
               </ToolbarIconButton>
             ))}
           </ToolbarCarousel>
-        )}
-
-        {activePanel === "more" && (
-          <div className="flex items-center justify-center gap-1" role="toolbar">
-            <ToolbarIconButton
-              label="Terug"
-              onClick={() => setActivePanel("main")}
-              title="Terug"
-            >
-              <BackIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              label="Entry verwijderen"
-              onClick={() => {
-                onDeleteEntry();
-                setActivePanel("main");
-              }}
-              title="Entry verwijderen"
-            >
-              <TrashIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              ariaPressed={isBookmarked}
-              isActive={isBookmarked}
-              label="Bookmarken"
-              onClick={onToggleBookmark}
-              title="Bookmarken"
-            >
-              <BookmarkIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              ariaPressed={isPrivate}
-              isActive={isPrivate}
-              label="Privé maken"
-              onClick={onTogglePrivate}
-              title="Privé maken"
-            >
-              <LockIcon />
-            </ToolbarIconButton>
-          </div>
         )}
       </div>
     </div>

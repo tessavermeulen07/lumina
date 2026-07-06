@@ -163,19 +163,21 @@ export async function getWeeklyInsights(
 
   const { data: entries } = await supabase
     .from("entries")
-    .select("id, created_at")
+    .select("id, created_at, is_private")
     .eq("user_id", user.id)
     .gte("created_at", selectedWeekStart.toISOString())
     .lte("created_at", weekEnd.toISOString());
 
-  const entryIds = (entries ?? []).map((entry) => entry.id);
+  const publicEntryIds = (entries ?? [])
+    .filter((entry) => !entry.is_private)
+    .map((entry) => entry.id);
   let analyses: EntryAnalysis[] = [];
 
-  if (entryIds.length > 0) {
+  if (publicEntryIds.length > 0) {
     const { data } = await supabase
       .from("entry_analyses")
       .select("*")
-      .in("entry_id", entryIds);
+      .in("entry_id", publicEntryIds);
 
     analyses = (data ?? []) as EntryAnalysis[];
   }
@@ -188,7 +190,9 @@ export async function getWeeklyInsights(
   }
 
   for (const analysis of analyses) {
-    const entry = entries?.find((item) => item.id === analysis.entry_id);
+    const entry = entries?.find(
+      (item) => item.id === analysis.entry_id && !item.is_private,
+    );
 
     if (!entry) continue;
 

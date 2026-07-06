@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { BookmarkIcon } from "@/components/journal/WritingToolbarIcons";
+import { BookmarkFilledIcon, BookmarkIcon } from "@/components/journal/WritingToolbarIcons";
 import { toggleBookmarkPrompt } from "@/lib/dashboard/reflection-prompt-actions";
 import type { FollowUpPromptCardData } from "@/lib/types/dashboard-reflection";
 
@@ -83,7 +83,7 @@ export function FollowUpPromptCard({
             }}
             type="button"
           >
-            <BookmarkIcon />
+            {isBookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
           </button>
         </div>
 
