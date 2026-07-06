@@ -420,6 +420,18 @@ export function BookmarkIcon() {
   );
 }
 
+export function BookmarkFilledIcon() {
+  return (
+    <SvgIcon>
+      <path
+        d="M6 5h12v16l-6-4-6 4V5z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </SvgIcon>
+  );
+}
+
 export function LockIcon() {
   return (
     <SvgIcon>

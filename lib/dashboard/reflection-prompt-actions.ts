@@ -52,6 +52,7 @@ export async function toggleBookmarkPrompt(
   }
 
   revalidatePath("/vandaag");
+  revalidatePath("/bewaard");
   return { success: true };
 }
 

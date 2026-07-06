@@ -6,6 +6,7 @@ import {
   toLocalDateString,
 } from "@/lib/data/week-utils";
 import { createClient } from "@/lib/supabase/server";
+import { stripRichTextToPlain } from "@/lib/utils/rich-text";
 import type { DashboardOverviewData } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
@@ -29,7 +30,7 @@ export async function getDashboardOverview(
 
   for (const entry of entries ?? []) {
     entryDates.add(toLocalDateString(new Date(entry.created_at)));
-    wordCount += countWords(entry.content);
+    wordCount += countWords(stripRichTextToPlain(entry.content));
   }
 
   return {

@@ -2,10 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EntryAnalysisReview } from "@/components/journal/EntryAnalysisReview";
+import {
+  EditorBridgeProvider,
+  useEditorBridge,
+} from "@/components/journal/EditorBridge";
 import { JournalFlow } from "@/components/journal/JournalFlow";
 import { ImageUploadModal } from "@/components/journal/ImageUploadModal";
+import { SetPrivateDialog } from "@/components/journal/SetPrivateDialog";
 import { WritingToolbar } from "@/components/journal/WritingToolbar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { respondToEntryAction } from "@/lib/ai/respond-to-entry";
+import { ensureEntryDraft } from "@/lib/entries/ensure-entry-draft";
 import {
   createEntryWithUserBlock,
   saveUserBlock,
@@ -13,11 +20,18 @@ import {
 import { deleteEntry } from "@/lib/entries/delete-entry";
 import { finalizeEntry } from "@/lib/entries/finalize-entry";
 import {
+  makeEntryPrivate,
+  removeEntryPrivate,
+  toggleEntryBookmark,
+} from "@/lib/entries/toggle-entry-flags";
+import {
   createLocalUserBlock,
   getActiveUserBlock,
   hasUserText,
   type EntryBlock,
 } from "@/lib/types/entry-blocks";
+import { normalizeEntryImageHtml } from "@/lib/utils/entry-images";
+import { isRichTextEmpty } from "@/lib/utils/rich-text";
 import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 
 const AUTO_SAVE_DELAY_MS = 1500;
@@ -29,17 +43,22 @@ interface WritingAreaProps {
   hint: string;
   initialEntryId?: string | null;
   initialBlocks?: EntryBlock[];
+  initialIsBookmarked?: boolean;
+  initialIsPrivate?: boolean;
   reflectionPeriod?: ReflectionPeriod;
   reflectionPromptId?: string;
 }
 
-export function WritingArea({
+function WritingAreaContent({
   hint,
   initialEntryId = null,
   initialBlocks,
+  initialIsBookmarked = false,
+  initialIsPrivate = false,
   reflectionPeriod,
   reflectionPromptId,
 }: Readonly<WritingAreaProps>) {
+  const { insertImage } = useEditorBridge();
   const [blocks, setBlocks] = useState<EntryBlock[]>(
     initialBlocks ?? [createLocalUserBlock()],
   );
@@ -52,8 +71,14 @@ export function WritingArea({
     null,
   );
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
+  const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPrivateDialogOpen, setIsPrivateDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isPrivateLoading, setIsPrivateLoading] = useState(false);
+  const [privateError, setPrivateError] = useState<string | null>(null);
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiLoadingAfterBlockId, setAiLoadingAfterBlockId] = useState<
@@ -77,7 +102,7 @@ export function WritingArea({
     reflectionPromptIdRef.current = reflectionPromptId;
   }, [reflectionPeriod, reflectionPromptId]);
 
-  const showToolbar = hasUserText(blocks) && !reviewAnalysis;
+  const showToolbar = !reviewAnalysis;
   const canSave = hasUserText(blocks) && !isFinalizing;
 
   useEffect(() => {
@@ -106,9 +131,10 @@ export function WritingArea({
 
   const persistUserBlock = useCallback(
     async (blockId: string, content: string) => {
-      const trimmed = content.trim();
+      const normalizedContent = normalizeEntryImageHtml(content);
+      const trimmed = normalizedContent.trim();
 
-      if (!trimmed || isSavingRef.current) {
+      if (isRichTextEmpty(trimmed) || isSavingRef.current) {
         return;
       }
 
@@ -149,7 +175,7 @@ export function WritingArea({
           const result = await saveUserBlock(
             entryIdRef.current,
             blockId,
-            content,
+            trimmed,
           );
 
           if ("error" in result) {
@@ -185,17 +211,19 @@ export function WritingArea({
     const userBlocks = blocks.filter((block) => block.type === "user");
 
     for (const block of userBlocks) {
-      if (block.content.trim()) {
+      if (!isRichTextEmpty(block.content)) {
         await persistUserBlock(block.id, block.content);
       }
     }
   }
 
   function handleUserBlockChange(blockId: string, content: string) {
+    const normalizedContent = normalizeEntryImageHtml(content);
+
     setBlocks((current) =>
       current.map((block) =>
         block.type === "user" && block.id === blockId
-          ? { ...block, content }
+          ? { ...block, content: normalizedContent }
           : block,
       ),
     );
@@ -207,10 +235,56 @@ export function WritingArea({
     }
 
     const timeoutId = setTimeout(() => {
-      void persistUserBlock(blockId, content);
+      void persistUserBlock(blockId, normalizedContent);
     }, AUTO_SAVE_DELAY_MS);
 
     saveTimeoutsRef.current.set(blockId, timeoutId);
+  }
+
+  async function handleEnsureEntry(): Promise<string> {
+    if (entryIdRef.current) {
+      return entryIdRef.current;
+    }
+
+    const activeBlock = getActiveUserBlock(blocks);
+    const result = await ensureEntryDraft({
+      reflectionPeriod: reflectionPeriodRef.current,
+    });
+
+    if ("error" in result) {
+      throw new Error(result.error);
+    }
+
+    entryIdRef.current = result.entryId;
+    setEntryId(result.entryId);
+
+    if (activeBlock) {
+      setBlocks((current) =>
+        current.map((block) =>
+          block.type === "user" && block.id === activeBlock.id
+            ? { ...result.block, content: activeBlock.content }
+            : block,
+        ),
+      );
+      lastSavedContentRef.current.set(
+        result.block.id,
+        activeBlock.content.trim(),
+      );
+    } else {
+      setBlocks([result.block]);
+    }
+
+    return result.entryId;
+  }
+
+  function handleImageInserted({
+    src,
+    storagePath,
+  }: {
+    src: string;
+    storagePath: string;
+  }) {
+    insertImage({ src, storagePath });
   }
 
   async function handleFinalize() {
@@ -238,12 +312,15 @@ export function WritingArea({
   }
 
   async function handleDeleteEntry() {
+    setIsDeleting(true);
+
     if (entryIdRef.current) {
       const result = await deleteEntry(entryIdRef.current);
 
       if ("error" in result) {
         setDraftStatus("error");
         setDraftError(result.error);
+        setIsDeleting(false);
         return;
       }
     }
@@ -259,13 +336,95 @@ export function WritingArea({
     setAiError(null);
     setFocusBlockId(null);
     setReviewAnalysis(null);
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+  }
+
+  async function handleToggleBookmark() {
+    if (isBookmarkLoading) {
+      return;
+    }
+
+    setIsBookmarkLoading(true);
+    setDraftError(null);
+
+    try {
+      const resolvedEntryId = await handleEnsureEntry();
+      const result = await toggleEntryBookmark(resolvedEntryId);
+
+      if ("error" in result) {
+        setDraftStatus("error");
+        setDraftError(result.error);
+        return;
+      }
+
+      setIsBookmarked((current) => !current);
+    } catch (error) {
+      setDraftStatus("error");
+      setDraftError(
+        error instanceof Error ? error.message : "Bookmark kon niet worden bijgewerkt.",
+      );
+    } finally {
+      setIsBookmarkLoading(false);
+    }
+  }
+
+  async function handleMakePrivate(password: string, confirmPassword: string) {
+    setIsPrivateLoading(true);
+    setPrivateError(null);
+
+    try {
+      const resolvedEntryId = await handleEnsureEntry();
+      const result = await makeEntryPrivate(
+        resolvedEntryId,
+        password,
+        confirmPassword,
+      );
+
+      if ("error" in result) {
+        setPrivateError(result.error);
+        return;
+      }
+
+      setIsPrivate(true);
+      setIsPrivateDialogOpen(false);
+    } catch (error) {
+      setPrivateError(
+        error instanceof Error
+          ? error.message
+          : "Privé instellen is mislukt.",
+      );
+    } finally {
+      setIsPrivateLoading(false);
+    }
+  }
+
+  async function handleRemovePrivate(password: string) {
+    if (!entryIdRef.current) {
+      return;
+    }
+
+    setIsPrivateLoading(true);
+    setPrivateError(null);
+
+    const result = await removeEntryPrivate(entryIdRef.current, password);
+
+    setIsPrivateLoading(false);
+
+    if ("error" in result) {
+      setPrivateError(result.error);
+      return;
+    }
+
+    setIsPrivate(false);
+    setIsPrivateDialogOpen(false);
   }
 
   async function handleAiAction(actionLabel: string) {
     const activeBlock = getActiveUserBlock(blocks);
     const activeContent = activeBlock?.content.trim() ?? "";
 
-    if (!activeContent) {
+    if (isRichTextEmpty(activeContent)) {
       setAiError("Schrijf eerst iets voordat je AI gebruikt.");
       return;
     }
@@ -336,23 +495,67 @@ export function WritingArea({
           onAiAction={(label) => {
             void handleAiAction(label);
           }}
-          onDeleteEntry={() => {
-            void handleDeleteEntry();
-          }}
+          onDeleteEntry={() => setIsDeleteDialogOpen(true)}
           onOpenImageModal={() => setIsImageModalOpen(true)}
+          onOpenPrivateDialog={() => {
+            setPrivateError(null);
+            setIsPrivateDialogOpen(true);
+          }}
           onSave={() => {
             void handleFinalize();
           }}
-          onToggleBookmark={() => setIsBookmarked((current) => !current)}
-          onTogglePrivate={() => setIsPrivate((current) => !current)}
+          onToggleBookmark={() => {
+            void handleToggleBookmark();
+          }}
           visible={showToolbar}
         />
       </section>
 
+      <ConfirmDialog
+        confirmClassName="bg-red-600 text-white hover:bg-red-700"
+        confirmLabel="Verwijderen"
+        isLoading={isDeleting}
+        isOpen={isDeleteDialogOpen}
+        message="Weet je zeker dat je deze entry wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+        onCancel={() => setIsDeleteDialogOpen(false)}
+        onConfirm={() => {
+          void handleDeleteEntry();
+        }}
+        title="Entry verwijderen?"
+      />
+
+      <SetPrivateDialog
+        error={privateError}
+        isLoading={isPrivateLoading}
+        isOpen={isPrivateDialogOpen}
+        isPrivate={isPrivate}
+        onClose={() => {
+          setPrivateError(null);
+          setIsPrivateDialogOpen(false);
+        }}
+        onMakePrivate={(password, confirmPassword) => {
+          void handleMakePrivate(password, confirmPassword);
+        }}
+        onRemovePrivate={(password) => {
+          void handleRemovePrivate(password);
+        }}
+      />
+
       <ImageUploadModal
+        entryId={entryId}
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
+        onEnsureEntry={handleEnsureEntry}
+        onImageInserted={handleImageInserted}
       />
     </>
+  );
+}
+
+export function WritingArea(props: Readonly<WritingAreaProps>) {
+  return (
+    <EditorBridgeProvider>
+      <WritingAreaContent {...props} />
+    </EditorBridgeProvider>
   );
 }

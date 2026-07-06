@@ -35,6 +35,10 @@ export interface Entry {
   content: string;
   summary: string | null;
   reflection_period: ReflectionPeriod | null;
+  is_bookmarked: boolean;
+  bookmarked_at: string | null;
+  is_private: boolean;
+  private_password_hash: string | null;
   created_at: string;
 }
 

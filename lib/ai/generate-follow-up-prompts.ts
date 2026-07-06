@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { getQuestionsForUseCase } from "@/lib/ai/question-context";
 import { getFinalizedEntriesWithAnalyses } from "@/lib/dashboard/reflection-entries";
+import { getEntryThemeLabel } from "@/lib/types/entry-analysis";
 
 export interface GeneratedFollowUpPrompt {
   topic: string;
@@ -47,7 +48,9 @@ export async function generateFollowUpPrompts(
       const analysis = entry.analysis;
       if (!analysis) return "";
 
-      const themes = analysis.themes.map((theme) => theme.name).join(", ");
+      const themes = analysis.themes
+        .map((theme) => getEntryThemeLabel(theme))
+        .join(", ");
       return `- ${analysis.title}: ${analysis.key_insight}${
         themes ? ` (thema's: ${themes})` : ""
       }`;

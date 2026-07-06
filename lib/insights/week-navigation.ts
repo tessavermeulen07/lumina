@@ -48,14 +48,21 @@ export function resolveWeekNavigation(
     currentIndex >= 0
       ? (weekStarts[currentIndex + 1] ?? null)
       : (weekStarts[0] ?? null);
-  const nextWeekStart =
-    currentIndex > 0 ? (weekStarts[currentIndex - 1] ?? null) : null;
   const isCurrentWeek = selectedWeekStartStr === currentWeekStartStr;
+  let nextWeekStart: string | null = null;
+
+  if (!isCurrentWeek) {
+    if (currentIndex > 0) {
+      nextWeekStart = weekStarts[currentIndex - 1] ?? null;
+    } else if (selectedWeekStartStr < currentWeekStartStr) {
+      nextWeekStart = currentWeekStartStr;
+    }
+  }
 
   return {
     isCurrentWeek,
     hasPreviousWeek,
-    hasNextWeek: !isCurrentWeek && nextWeekStart !== null,
+    hasNextWeek: !isCurrentWeek,
     previousWeekStart,
     nextWeekStart,
   };

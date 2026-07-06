@@ -1,4 +1,5 @@
 import type { EntryAnalysis } from "@/lib/types/database";
+import { getEntryThemeLabel } from "@/lib/types/entry-analysis";
 
 interface EntryAnalysisContentProps {
   analysis: EntryAnalysis;
@@ -82,11 +83,15 @@ export function EntryAnalysisContent({
             Thema&apos;s
           </h3>
           <ul className="mt-3 flex flex-wrap gap-2">
-            {analysis.themes.map((theme) => (
-              <li className={whiteTagClass} key={theme.name}>
-                {theme.name}
-              </li>
-            ))}
+            {analysis.themes.map((theme, index) => {
+              const label = getEntryThemeLabel(theme);
+
+              return (
+                <li className={whiteTagClass} key={`${label}-${index}`}>
+                  {label}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

@@ -10,6 +10,7 @@ import type {
   ReflectionPeriod,
 } from "@/lib/types/database";
 import type { AiBlock, EntryBlock, UserBlock } from "@/lib/types/entry-blocks";
+import { isRichTextEmpty, stripRichTextToPlain } from "@/lib/utils/rich-text";
 
 function toUserBlock(row: EntryUserBlock): UserBlock {
   return {
@@ -45,7 +46,7 @@ export async function syncEntryContent(entryId: string): Promise<void> {
 
   const content =
     userBlocks
-      ?.map((block) => block.content.trim())
+      ?.map((block) => stripRichTextToPlain(block.content).trim())
       .filter(Boolean)
       .join("\n\n") ?? "";
 
@@ -86,8 +87,9 @@ export async function createEntryWithUserBlock(
   const user = await getAuthenticatedUser();
   const supabase = await createClient();
   const trimmed = content.trim();
+  const plainContent = stripRichTextToPlain(trimmed);
 
-  if (!trimmed) {
+  if (isRichTextEmpty(trimmed)) {
     return { error: "Schrijf iets voordat je opslaat." };
   }
 
@@ -95,7 +97,7 @@ export async function createEntryWithUserBlock(
     .from("entries")
     .insert({
       user_id: user.id,
-      content: trimmed,
+      content: plainContent,
       reflection_period: options?.reflectionPeriod ?? null,
     })
     .select("id")

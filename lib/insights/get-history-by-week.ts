@@ -1,5 +1,6 @@
 import { getAuthenticatedUser } from "@/lib/auth/get-profile";
 import { startOfWeek, toLocalDateString } from "@/lib/data/week-utils";
+import { isEntryUnlockedForUser } from "@/lib/entries/private-entry-access";
 import { formatDayLabel } from "@/lib/insights/history-format";
 import {
   getWeekStartsWithEntries,
@@ -66,7 +67,7 @@ export async function getHistoryByWeek(
 
   const { data: entries } = await supabase
     .from("entries")
-    .select("id, created_at")
+    .select("id, created_at, is_private, is_bookmarked")
     .eq("user_id", user.id)
     .gte("created_at", selectedWeekStart.toISOString())
     .lte("created_at", weekEnd.toISOString())
@@ -90,14 +91,35 @@ export async function getHistoryByWeek(
     );
   }
 
+  const unlockChecks = await Promise.all(
+    (entries ?? []).map(async (entry) => ({
+      id: entry.id,
+      isUnlocked: entry.is_private
+        ? await isEntryUnlockedForUser(entry.id, user.id)
+        : true,
+    })),
+  );
+  const unlockedById = new Map(
+    unlockChecks.map((check) => [check.id, check.isUnlocked]),
+  );
+
   const grouped = new Map<string, HistoryEntryItem[]>();
 
   for (const entry of entries ?? []) {
     const dateKey = toLocalDateString(new Date(entry.created_at));
+    const isUnlocked = unlockedById.get(entry.id) ?? true;
+    const analysis =
+      entry.is_private && !isUnlocked
+        ? null
+        : (analysesByEntry.get(entry.id) ?? null);
+
     const item: HistoryEntryItem = {
       id: entry.id,
       created_at: entry.created_at,
-      analysis: analysesByEntry.get(entry.id) ?? null,
+      is_bookmarked: entry.is_bookmarked,
+      is_private: entry.is_private,
+      is_unlocked: isUnlocked,
+      analysis,
     };
 
     const existing = grouped.get(dateKey) ?? [];

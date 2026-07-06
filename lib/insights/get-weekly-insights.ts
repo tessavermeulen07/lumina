@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { EntryAnalysis, EmotionScores } from "@/lib/types/database";
 import type { EntryFeeling, EntryPerson } from "@/lib/types/entry-analysis";
+import { getEntryThemeLabel } from "@/lib/types/entry-analysis";
 
 export interface WordsPerDay {
   date: string;
@@ -98,13 +99,19 @@ function aggregateThemes(analyses: EntryAnalysis[]): {
 
   for (const analysis of analyses) {
     for (const theme of analysis.themes) {
-      const key = theme.name.toLowerCase();
+      const label = getEntryThemeLabel(theme);
+
+      if (!label || label === "Thema") {
+        continue;
+      }
+
+      const key = label.toLowerCase();
       const existing = map.get(key);
 
       if (existing) {
         existing.count += 1;
       } else {
-        map.set(key, { name: theme.name, count: 1 });
+        map.set(key, { name: label, count: 1 });
       }
     }
   }
@@ -156,19 +163,21 @@ export async function getWeeklyInsights(
 
   const { data: entries } = await supabase
     .from("entries")
-    .select("id, created_at")
+    .select("id, created_at, is_private")
     .eq("user_id", user.id)
     .gte("created_at", selectedWeekStart.toISOString())
     .lte("created_at", weekEnd.toISOString());
 
-  const entryIds = (entries ?? []).map((entry) => entry.id);
+  const publicEntryIds = (entries ?? [])
+    .filter((entry) => !entry.is_private)
+    .map((entry) => entry.id);
   let analyses: EntryAnalysis[] = [];
 
-  if (entryIds.length > 0) {
+  if (publicEntryIds.length > 0) {
     const { data } = await supabase
       .from("entry_analyses")
       .select("*")
-      .in("entry_id", entryIds);
+      .in("entry_id", publicEntryIds);
 
     analyses = (data ?? []) as EntryAnalysis[];
   }
@@ -181,7 +190,9 @@ export async function getWeeklyInsights(
   }
 
   for (const analysis of analyses) {
-    const entry = entries?.find((item) => item.id === analysis.entry_id);
+    const entry = entries?.find(
+      (item) => item.id === analysis.entry_id && !item.is_private,
+    );
 
     if (!entry) continue;
 

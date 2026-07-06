@@ -1,3 +1,5 @@
+import { stripRichTextToPlain } from "@/lib/utils/rich-text";
+
 export interface UserBlock {
   type: "user";
   id: string;
@@ -44,6 +46,8 @@ export function getActiveUserBlock(blocks: EntryBlock[]): UserBlock | null {
 
 export function hasUserText(blocks: EntryBlock[]): boolean {
   return blocks.some(
-    (block) => block.type === "user" && block.content.trim().length > 0,
+    (block) =>
+      block.type === "user" &&
+      stripRichTextToPlain(block.content).trim().length > 0,
   );
 }

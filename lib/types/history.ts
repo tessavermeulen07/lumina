@@ -3,6 +3,9 @@ import type { EntryAnalysis } from "@/lib/types/database";
 export interface HistoryEntryItem {
   id: string;
   created_at: string;
+  is_bookmarked: boolean;
+  is_private: boolean;
+  is_unlocked: boolean;
   analysis: EntryAnalysis | null;
 }
 
