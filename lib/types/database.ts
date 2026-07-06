@@ -92,8 +92,16 @@ export interface HabitAndIntention {
   title: string;
   description: string | null;
   type: HabitType;
+  category: string;
   frequency: GoalFrequency;
   is_active: boolean;
+  created_at: string;
+}
+
+export interface GoalCategory {
+  id: string;
+  user_id: string;
+  name: string;
   created_at: string;
 }
 
@@ -226,6 +234,14 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<HabitAndIntention, "id" | "user_id">>;
+      };
+      goal_categories: {
+        Row: GoalCategory;
+        Insert: Omit<GoalCategory, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<GoalCategory, "id" | "user_id">>;
       };
       habit_logs: {
         Row: HabitLog;

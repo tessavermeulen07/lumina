@@ -5,14 +5,22 @@ import { useEffect, useState, useTransition } from "react";
 import { AddGoalModal } from "@/components/dashboard/AddGoalModal";
 import { Button } from "@/components/ui/Button";
 import { deleteIntention } from "@/lib/habits/delete-intention";
-import { saveIntention } from "@/lib/habits/save-intention";
-import { getFrequencyLabel, type Goal } from "@/lib/types/goal";
+import { saveGoal } from "@/lib/habits/save-intention";
+import {
+  getFrequencyLabel,
+  type Goal,
+  type GoalCategoryOption,
+} from "@/lib/types/goal";
 
 interface GoalsSectionProps {
   initialGoals: Goal[];
+  categories: GoalCategoryOption[];
 }
 
-export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
+export function GoalsSection({
+  initialGoals,
+  categories,
+}: Readonly<GoalsSectionProps>) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [goals, setGoals] = useState(initialGoals);
@@ -23,16 +31,23 @@ export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
     setGoals(initialGoals);
   }, [initialGoals]);
 
-  async function handleAdd(goal: Omit<Goal, "id">) {
+  async function handleAdd(goal: Omit<Goal, "id" | "categoryLabel">) {
     setError(null);
-    const result = await saveIntention(goal);
+    const result = await saveGoal(goal);
 
     if ("error" in result) {
       setError(result.error);
       return;
     }
 
-    setGoals((current) => [...current, { ...goal, id: result.id }]);
+    const categoryLabel =
+      categories.find((category) => category.value === goal.category)?.label ??
+      "Overig";
+
+    setGoals((current) => [
+      ...current,
+      { ...goal, id: result.id, categoryLabel },
+    ]);
     startTransition(() => {
       router.refresh();
     });
@@ -56,7 +71,7 @@ export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
   return (
     <>
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Intenties</h2>
+        <h2 className="text-xl font-semibold text-foreground">Doelen</h2>
 
         <article className="rounded-2xl border border-lumina-500/25 bg-surface p-6">
           <div className="flex items-start justify-between gap-4">
@@ -96,9 +111,7 @@ export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
           ) : null}
 
           {goals.length === 0 ? (
-            <p className="mt-6 text-sm text-muted">
-              Voeg een intentie toe.
-            </p>
+            <p className="mt-6 text-sm text-muted">Voeg een doel toe.</p>
           ) : (
             <ul className="mt-6 space-y-3">
               {goals.map((goal) => (
@@ -110,10 +123,13 @@ export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
                     <p className="font-medium text-foreground">{goal.name}</p>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="text-xs text-muted">
+                        {goal.categoryLabel}
+                      </span>
+                      <span className="text-xs text-muted">
                         {getFrequencyLabel(goal.frequency)}
                       </span>
                       <button
-                        aria-label={`Verwijder intentie ${goal.name}`}
+                        aria-label={`Verwijder doel ${goal.name}`}
                         className="text-xs text-muted transition-colors hover:text-foreground"
                         disabled={isPending}
                         onClick={() => {
@@ -138,6 +154,7 @@ export function GoalsSection({ initialGoals }: Readonly<GoalsSectionProps>) {
       </section>
 
       <AddGoalModal
+        categories={categories}
         isOpen={isModalOpen}
         onAdd={(goal) => {
           void handleAdd(goal);

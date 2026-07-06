@@ -5,8 +5,8 @@ import { getTodayDateString } from "@/lib/dashboard/reflection-entries";
 
 export type ReflectionCacheKey = "ochtend_context" | "avond_context";
 
-export async function getReflectionCache<T>(
-  cacheKey: ReflectionCacheKey,
+export async function getDashboardCache<T>(
+  cacheKey: string,
   referenceDate = new Date(),
 ): Promise<T | null> {
   const user = await getAuthenticatedUser();
@@ -25,8 +25,8 @@ export async function getReflectionCache<T>(
   return data.payload as T;
 }
 
-export async function setReflectionCache(
-  cacheKey: ReflectionCacheKey,
+export async function setDashboardCache(
+  cacheKey: string,
   payload: object,
   referenceDate = new Date(),
 ): Promise<void> {
@@ -45,6 +45,21 @@ export async function setReflectionCache(
   await supabase.from("dashboard_reflection_cache").upsert(row, {
     onConflict: "user_id,cache_date,cache_key",
   });
+}
+
+export async function getReflectionCache<T>(
+  cacheKey: ReflectionCacheKey,
+  referenceDate = new Date(),
+): Promise<T | null> {
+  return getDashboardCache<T>(cacheKey, referenceDate);
+}
+
+export async function setReflectionCache(
+  cacheKey: ReflectionCacheKey,
+  payload: object,
+  referenceDate = new Date(),
+): Promise<void> {
+  await setDashboardCache(cacheKey, payload, referenceDate);
 }
 
 export async function clearReflectionCacheForToday(

@@ -47,6 +47,12 @@ interface WritingAreaProps {
   initialIsPrivate?: boolean;
   reflectionPeriod?: ReflectionPeriod;
   reflectionPromptId?: string;
+  goalId?: string;
+  goalPrompt?: string;
+  /** @deprecated Use goalId */
+  intentionId?: string;
+  /** @deprecated Use goalPrompt */
+  intentionPrompt?: string;
 }
 
 function WritingAreaContent({
@@ -57,7 +63,13 @@ function WritingAreaContent({
   initialIsPrivate = false,
   reflectionPeriod,
   reflectionPromptId,
+  goalId,
+  goalPrompt,
+  intentionId,
+  intentionPrompt,
 }: Readonly<WritingAreaProps>) {
+  const resolvedGoalId = goalId ?? intentionId;
+  const resolvedGoalPrompt = goalPrompt ?? intentionPrompt;
   const { insertImage } = useEditorBridge();
   const [blocks, setBlocks] = useState<EntryBlock[]>(
     initialBlocks ?? [createLocalUserBlock()],
@@ -96,11 +108,20 @@ function WritingAreaContent({
   const lastSavedContentRef = useRef<Map<string, string>>(new Map());
   const reflectionPeriodRef = useRef(reflectionPeriod);
   const reflectionPromptIdRef = useRef(reflectionPromptId);
+  const goalIdRef = useRef(resolvedGoalId);
+  const goalPromptRef = useRef(resolvedGoalPrompt);
 
   useEffect(() => {
     reflectionPeriodRef.current = reflectionPeriod;
     reflectionPromptIdRef.current = reflectionPromptId;
-  }, [reflectionPeriod, reflectionPromptId]);
+    goalIdRef.current = resolvedGoalId;
+    goalPromptRef.current = resolvedGoalPrompt;
+  }, [
+    reflectionPeriod,
+    reflectionPromptId,
+    resolvedGoalId,
+    resolvedGoalPrompt,
+  ]);
 
   const showToolbar = !reviewAnalysis;
   const canSave = hasUserText(blocks) && !isFinalizing;
@@ -298,6 +319,8 @@ function WritingAreaContent({
       blocks,
       reflectionPeriod: reflectionPeriodRef.current,
       reflectionPromptId: reflectionPromptIdRef.current,
+      goalId: goalIdRef.current,
+      goalPrompt: goalPromptRef.current,
     });
 
     setIsFinalizing(false);
