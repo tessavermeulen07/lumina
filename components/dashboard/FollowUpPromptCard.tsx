@@ -60,7 +60,7 @@ export function FollowUpPromptCard({
   }
 
   return (
-    <div className="relative min-w-[280px] max-w-[320px] shrink-0 snap-start">
+    <div className="relative min-w-[260px] max-w-[300px] shrink-0 snap-start sm:min-w-[280px] sm:max-w-[320px] md:min-w-[300px] md:max-w-[340px]">
       <article className="group relative flex min-h-full flex-col rounded-2xl border border-lumina-500/25 bg-surface p-4 transition-colors hover:border-lumina-500/50">
         <div className="flex items-start justify-between gap-2">
           <span className="min-w-0 rounded-full bg-lumina-500/10 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-lumina-500">

@@ -17,7 +17,7 @@ export function GoalCheckInSection({
       <h2 className="text-xl font-semibold text-foreground">
         Check-ins voor je doelen
       </h2>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {checkIns.map((checkIn) => (
           <GoalCheckInCard key={checkIn.id} data={checkIn} />
         ))}

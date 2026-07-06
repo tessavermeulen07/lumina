@@ -4,7 +4,7 @@ type ButtonVariant = "primary" | "outline" | "dark";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-lumina-300 text-lumina-900 hover:bg-lumina-100 focus-visible:outline-lumina-900",
+    "bg-lumina-300 text-white hover:bg-lumina-100 focus-visible:outline-lumina-900",
   outline:
     "border border-lumina-500/25 text-foreground hover:border-lumina-500 hover:bg-lumina-300/15 focus-visible:outline-lumina-900",
   dark:

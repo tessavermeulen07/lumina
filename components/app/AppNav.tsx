@@ -2,13 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const navItems = [
-  { href: "/vandaag", label: "Vandaag" },
-  { href: "/geschiedenis", label: "Geschiedenis" },
-  { href: "/bewaard", label: "Bewaard" },
-  { href: "/inzichten", label: "Inzichten" },
-];
+import {
+  appNavItems,
+  isAppNavItemActive,
+} from "@/lib/nav/app-nav-items";
 
 function navLinkClass(isActive: boolean): string {
   const base =
@@ -22,13 +19,12 @@ export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="App-navigatie" className="flex items-center gap-6 md:gap-8">
-      {navItems.map((item) => {
-        const isActive =
-          pathname === item.href ||
-          (item.href === "/vandaag" && pathname === "/") ||
-          (item.href === "/geschiedenis" &&
-            (pathname === "/geschiedenis" || pathname === "/entries"));
+    <nav
+      aria-label="App-navigatie"
+      className="hidden items-center gap-6 lg:flex lg:gap-8"
+    >
+      {appNavItems.map((item) => {
+        const isActive = isAppNavItemActive(pathname, item.href);
 
         return (
           <Link

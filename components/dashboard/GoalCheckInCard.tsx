@@ -48,10 +48,10 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
         </span>
       </div>
 
-      <p className="w-full text-left text-xl font-semibold text-lumina-500">
+      <p className="w-full text-left text-lg font-semibold text-lumina-500 md:text-xl">
         {data.name}
       </p>
-      <p className="mt-2 w-full whitespace-pre-line text-left text-lg leading-relaxed text-foreground">
+      <p className="mt-2 w-full whitespace-pre-line text-left text-base leading-relaxed text-foreground md:text-lg">
         {data.aiCheckinPrompt}
       </p>
 
