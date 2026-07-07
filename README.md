@@ -43,3 +43,5 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Vercel cron: geconfigureerd in `vercel.json` met dagelijks schema `0 5 * * *`
 
 Deze job zet due doelen automatisch in de in-app check-in inbox (`intention_checkin_queue`), zodat gebruikers zonder handmatige actie nieuwe check-ins zien in `vandaag`.
+
+In development roept het app-layout dezelfde scheduler automatisch aan bij elk paginabezoek (`ensureDueCheckins`), zodat je lokaal geen cron hoeft te triggeren. Vereist `SUPABASE_SERVICE_ROLE_KEY` (of `SUPABASE_SECRET_KEY`) in `.env.local`.

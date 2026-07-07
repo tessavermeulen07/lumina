@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/app/AppHeader";
 import { CheckinPopup } from "@/components/checkins/CheckinPopup";
 import { getPendingPopup } from "@/lib/checkins/get-pending-popup";
 import { getProfile } from "@/lib/auth/get-profile";
+import { ensureDueCheckins } from "@/lib/habits/ensure-due-checkins";
 import { isOnboardingComplete } from "@/lib/profile/onboarding-context";
 
 export default async function AppLayout({
@@ -10,6 +11,7 @@ export default async function AppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await ensureDueCheckins();
   const [profile, popup] = await Promise.all([getProfile(), getPendingPopup()]);
 
   if (!isOnboardingComplete(profile)) {

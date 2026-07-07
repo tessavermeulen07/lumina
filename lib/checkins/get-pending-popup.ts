@@ -13,6 +13,8 @@ export interface PendingPopup {
   message: string;
   primaryLabel: string;
   href: string;
+  secondaryLabel: string;
+  secondaryHref: string;
 }
 
 function resolveTimeOrDefault(
@@ -22,13 +24,17 @@ function resolveTimeOrDefault(
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
+const SETTINGS_HREF = "/instellingen#meldingen";
+
 function getPopupConfig(type: CheckinPopupType): Omit<PendingPopup, "type"> {
   if (type === "goals") {
     return {
       title: "Tijd voor je doelen",
       message: "Je hebt open check-ins voor je doelen. Rond ze in een paar tikken af.",
-      primaryLabel: "Open doelen",
-      href: "/vandaag",
+      primaryLabel: "Ga naar doelen",
+      href: "/vandaag#doelen",
+      secondaryLabel: "Later",
+      secondaryHref: SETTINGS_HREF,
     };
   }
 
@@ -38,6 +44,8 @@ function getPopupConfig(type: CheckinPopupType): Omit<PendingPopup, "type"> {
       message: "Neem een rustig moment om je ochtendreflectie te schrijven.",
       primaryLabel: "Start ochtendreflectie",
       href: "/schrijf?reflectie=ochtend",
+      secondaryLabel: "Later",
+      secondaryHref: SETTINGS_HREF,
     };
   }
 
@@ -46,6 +54,8 @@ function getPopupConfig(type: CheckinPopupType): Omit<PendingPopup, "type"> {
     message: "Sluit je dag af met een korte avondreflectie.",
     primaryLabel: "Start avondreflectie",
     href: "/schrijf?reflectie=avond",
+    secondaryLabel: "Later",
+    secondaryHref: SETTINGS_HREF,
   };
 }
 

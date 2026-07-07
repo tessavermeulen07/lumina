@@ -40,6 +40,17 @@ export function GoalsSection({
     setGoals(initialGoals);
   }, [initialGoals]);
 
+  useEffect(() => {
+    if (window.location.hash !== "#doelen") {
+      return;
+    }
+
+    document.getElementById("doelen")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
   async function handleAdd(
     goal: Omit<Goal, "id" | "categoryLabel" | "windowStartDate" | "windowEndDate">,
   ) {
@@ -97,7 +108,7 @@ export function GoalsSection({
 
   return (
     <>
-      <section className="space-y-4">
+      <section className="scroll-mt-8 space-y-4" id="doelen">
         <h2 className="text-lg font-semibold text-foreground md:text-xl">Doelen</h2>
 
         <article className="rounded-2xl border border-lumina-500/25 bg-surface p-6">

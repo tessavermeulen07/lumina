@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { createClient } from "@/lib/supabase/client";
@@ -51,6 +51,17 @@ export function ProfileForm({
   const [error, setError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (window.location.hash !== "#meldingen") {
+      return;
+    }
+
+    document.getElementById("meldingen")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -135,7 +146,10 @@ export function ProfileForm({
           </select>
         </div>
 
-        <section className="space-y-4 rounded-2xl border border-lumina-500/15 bg-background p-4">
+        <section
+          className="scroll-mt-8 space-y-4 rounded-2xl border border-lumina-500/15 bg-background p-4"
+          id="meldingen"
+        >
           <h2 className="text-sm font-semibold text-foreground">
             Meldingen en herinneringen
           </h2>
