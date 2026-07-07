@@ -1,28 +1,6 @@
-import DOMPurify from "isomorphic-dompurify";
 import { resolveEntryImageHtml } from "@/lib/utils/entry-images";
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i;
-
-const SANITIZE_CONFIG = {
-  ALLOWED_TAGS: [
-    "p",
-    "br",
-    "strong",
-    "em",
-    "u",
-    "s",
-    "h1",
-    "h2",
-    "h3",
-    "ul",
-    "ol",
-    "li",
-    "hr",
-    "span",
-    "img",
-  ],
-  ALLOWED_ATTR: ["class", "src", "alt", "data-storage-path"],
-};
 
 function escapeHtml(text: string): string {
   return text
@@ -31,6 +9,16 @@ function escapeHtml(text: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
 }
 
 export function looksLikeHtml(content: string): boolean {
@@ -70,25 +58,16 @@ export function stripRichTextToPlain(html: string): string {
     return withImagePlaceholders;
   }
 
-  const sanitized = DOMPurify.sanitize(withImagePlaceholders, SANITIZE_CONFIG);
-  const withBreaks = sanitized
+  const withBreaks = withImagePlaceholders
     .replaceAll(/<br\s*\/?>/gi, "\n")
     .replaceAll(/<\/p>/gi, "\n\n")
     .replaceAll(/<\/h[1-6]>/gi, "\n\n")
     .replaceAll(/<\/li>/gi, "\n")
     .replaceAll(/<hr\s*\/?>/gi, "\n---\n");
 
-  const text = DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [] });
+  const text = decodeHtmlEntities(withBreaks.replace(/<[^>]+>/g, ""));
 
   return text.replaceAll(/\n{3,}/g, "\n\n").trim();
-}
-
-export function sanitizeRichTextHtml(html: string): string {
-  if (!html.trim()) {
-    return "";
-  }
-
-  return DOMPurify.sanitize(resolveEntryImageHtml(html), SANITIZE_CONFIG);
 }
 
 export function isRichTextEmpty(html: string): boolean {

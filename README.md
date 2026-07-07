@@ -34,3 +34,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Dagelijkse check-in scheduler
+
+- Cron route: `/api/cron/check-ins`
+- Vereiste env var: `CRON_SECRET`
+- Autorisatie: `Authorization: Bearer <CRON_SECRET>` of header `x-cron-secret`
+- Vercel cron: geconfigureerd in `vercel.json` met dagelijks schema `0 5 * * *`
+
+Deze job zet due doelen automatisch in de in-app check-in inbox (`intention_checkin_queue`), zodat gebruikers zonder handmatige actie nieuwe check-ins zien in `vandaag`.

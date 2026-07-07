@@ -21,6 +21,7 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
 
     const result = await logIntentionCheckin({
       habitId: data.id,
+      queueItemId: data.queueItemId,
       status,
       aiCheckinPrompt: data.aiCheckinPrompt,
     });

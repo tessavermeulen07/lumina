@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { AddGoalModal } from "@/components/dashboard/AddGoalModal";
 import { Button } from "@/components/ui/Button";
 import { deleteIntention } from "@/lib/habits/delete-intention";
+import { logIntentionCheckin } from "@/lib/habits/log-intention-checkin";
 import { saveGoal } from "@/lib/habits/save-intention";
 import {
   getFrequencyLabel,
@@ -15,6 +16,14 @@ import {
 interface GoalsSectionProps {
   initialGoals: Goal[];
   categories: GoalCategoryOption[];
+}
+
+function formatDutchDate(dateString: string): string {
+  return new Intl.DateTimeFormat("nl-NL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateString));
 }
 
 export function GoalsSection({
@@ -31,7 +40,9 @@ export function GoalsSection({
     setGoals(initialGoals);
   }, [initialGoals]);
 
-  async function handleAdd(goal: Omit<Goal, "id" | "categoryLabel">) {
+  async function handleAdd(
+    goal: Omit<Goal, "id" | "categoryLabel" | "windowStartDate" | "windowEndDate">,
+  ) {
     setError(null);
     const result = await saveGoal(goal);
 
@@ -40,14 +51,7 @@ export function GoalsSection({
       return;
     }
 
-    const categoryLabel =
-      categories.find((category) => category.value === goal.category)?.label ??
-      "Overig";
-
-    setGoals((current) => [
-      ...current,
-      { ...goal, id: result.id, categoryLabel },
-    ]);
+    setIsModalOpen(false);
     startTransition(() => {
       router.refresh();
     });
@@ -63,6 +67,29 @@ export function GoalsSection({
     }
 
     setGoals((current) => current.filter((goal) => goal.id !== id));
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  async function handleGoalCheckin(
+    goalId: string,
+    status: "completed" | "skipped",
+    queueItemId?: string,
+  ) {
+    setError(null);
+    const result = await logIntentionCheckin({
+      habitId: goalId,
+      queueItemId,
+      status,
+    });
+
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+
+    setGoals((current) => current.filter((goal) => goal.id !== goalId));
     startTransition(() => {
       router.refresh();
     });
@@ -128,17 +155,6 @@ export function GoalsSection({
                       <span className="text-xs text-muted">
                         {getFrequencyLabel(goal.frequency)}
                       </span>
-                      <button
-                        aria-label={`Verwijder doel ${goal.name}`}
-                        className="text-xs text-muted transition-colors hover:text-foreground"
-                        disabled={isPending}
-                        onClick={() => {
-                          void handleDelete(goal.id);
-                        }}
-                        type="button"
-                      >
-                        Verwijder
-                      </button>
                     </div>
                   </div>
                   {goal.description ? (
@@ -146,6 +162,49 @@ export function GoalsSection({
                       {goal.description}
                     </p>
                   ) : null}
+                  <p className="mt-1 text-xs text-muted">
+                    Einddatum: {formatDutchDate(goal.windowEndDate)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
+                    <button
+                      className="inline-flex h-[18px] items-center justify-center rounded-full border border-lumina-500/25 px-2 text-[11px] leading-none text-foreground transition-colors hover:border-lumina-500 hover:bg-lumina-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={isPending}
+                      onClick={() => {
+                        void handleGoalCheckin(
+                          goal.id,
+                          "completed",
+                          goal.queueItemId,
+                        );
+                      }}
+                      type="button"
+                    >
+                      Gedaan
+                    </button>
+                    <button
+                      className="inline-flex h-[18px] items-center justify-center rounded-full border border-lumina-500/25 px-2 text-[11px] leading-none text-foreground transition-colors hover:border-lumina-500 hover:bg-lumina-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={isPending}
+                      onClick={() => {
+                        void handleGoalCheckin(
+                          goal.id,
+                          "skipped",
+                          goal.queueItemId,
+                        );
+                      }}
+                      type="button"
+                    >
+                      Overgeslagen
+                    </button>
+                    <button
+                      className="inline-flex h-[18px] items-center justify-center rounded-full border border-lumina-500/25 px-2 text-[11px] leading-none text-foreground transition-colors hover:border-lumina-500 hover:bg-lumina-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={isPending}
+                      onClick={() => {
+                        void handleDelete(goal.id);
+                      }}
+                      type="button"
+                    >
+                      Verwijder
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

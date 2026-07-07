@@ -13,12 +13,23 @@ interface ProfileFormProps {
   username: string;
   email?: string;
   aiPersonaPreference: AiCoachStyle | null;
+  goalsCheckinTime?: string | null;
+  morningReflectionTime?: string | null;
+  eveningReflectionTime?: string | null;
+}
+
+function toTimeInputValue(value: string | null | undefined, fallback: string): string {
+  if (!value) return fallback;
+  return value.slice(0, 5);
 }
 
 export function ProfileForm({
   username: initialUsername,
   email,
   aiPersonaPreference: initialCoachStyle,
+  goalsCheckinTime: initialGoalsCheckinTime,
+  morningReflectionTime: initialMorningReflectionTime,
+  eveningReflectionTime: initialEveningReflectionTime,
 }: Readonly<ProfileFormProps>) {
   const router = useRouter();
   const usernameId = useId();
@@ -26,6 +37,15 @@ export function ProfileForm({
   const [username, setUsername] = useState(initialUsername);
   const [coachStyle, setCoachStyle] = useState<AiCoachStyle | "">(
     initialCoachStyle ?? "",
+  );
+  const [goalsCheckinTime, setGoalsCheckinTime] = useState(
+    toTimeInputValue(initialGoalsCheckinTime, "09:00"),
+  );
+  const [morningReflectionTime, setMorningReflectionTime] = useState(
+    toTimeInputValue(initialMorningReflectionTime, "08:00"),
+  );
+  const [eveningReflectionTime, setEveningReflectionTime] = useState(
+    toTimeInputValue(initialEveningReflectionTime, "20:00"),
   );
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +61,9 @@ export function ProfileForm({
       const result = await updateProfile({
         username: username.trim(),
         aiPersonaPreference: coachStyle || null,
+        goalsCheckinTime,
+        morningReflectionTime,
+        eveningReflectionTime,
       });
 
       if ("error" in result) {
@@ -111,6 +134,54 @@ export function ProfileForm({
             ))}
           </select>
         </div>
+
+        <section className="space-y-4 rounded-2xl border border-lumina-500/15 bg-background p-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            Meldingen en herinneringen
+          </h2>
+          <p className="text-xs text-muted">
+            Je krijgt op deze tijden een popup. Ben je niet online, dan tonen we
+            de popup zodra je weer inlogt.
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-foreground">
+                Tijd doelen check-in
+              </label>
+              <input
+                className="w-full rounded-xl border border-lumina-500/25 bg-surface px-3 py-2 text-sm text-foreground focus:border-lumina-500 focus:outline-none focus:ring-2 focus:ring-lumina-100/50"
+                onChange={(event) => setGoalsCheckinTime(event.target.value)}
+                required
+                type="time"
+                value={goalsCheckinTime}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-foreground">
+                Tijd ochtendreflectie
+              </label>
+              <input
+                className="w-full rounded-xl border border-lumina-500/25 bg-surface px-3 py-2 text-sm text-foreground focus:border-lumina-500 focus:outline-none focus:ring-2 focus:ring-lumina-100/50"
+                onChange={(event) => setMorningReflectionTime(event.target.value)}
+                required
+                type="time"
+                value={morningReflectionTime}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-foreground">
+                Tijd avondreflectie
+              </label>
+              <input
+                className="w-full rounded-xl border border-lumina-500/25 bg-surface px-3 py-2 text-sm text-foreground focus:border-lumina-500 focus:outline-none focus:ring-2 focus:ring-lumina-100/50"
+                onChange={(event) => setEveningReflectionTime(event.target.value)}
+                required
+                type="time"
+                value={eveningReflectionTime}
+              />
+            </div>
+          </div>
+        </section>
 
         {error ? (
           <p className="text-sm text-red-600" role="alert">

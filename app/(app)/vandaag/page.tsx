@@ -3,13 +3,11 @@ import { DailyJournalSection } from "@/components/dashboard/DailyJournalSection"
 import { DashboardGreeting } from "@/components/dashboard/DashboardGreeting";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { GoalsAndLuminaRow } from "@/components/dashboard/GoalsAndLuminaRow";
-import { GoalCheckInSection } from "@/components/dashboard/GoalCheckInSection";
 import { ensureDailyPrompts } from "@/lib/dashboard/ensure-daily-prompts";
 import { getCarouselPrompts } from "@/lib/dashboard/get-carousel-prompts";
 import { getDailyCheckInData } from "@/lib/dashboard/get-check-in-context";
 import { getDashboardOverview } from "@/lib/data/get-dashboard-overview";
 import { getProfile } from "@/lib/auth/get-profile";
-import { getDueGoalCheckIns } from "@/lib/habits/get-due-intention-checkins";
 import { listGoalCategoryOptions } from "@/lib/habits/list-goal-categories";
 import { listGoals } from "@/lib/habits/list-intentions";
 
@@ -23,7 +21,6 @@ export default async function VandaagPage() {
     followUpPrompts,
     goals,
     goalCategories,
-    dueCheckIns,
     luminaQuestions,
   ] = await Promise.all([
     getProfile(),
@@ -32,7 +29,6 @@ export default async function VandaagPage() {
     getCarouselPrompts(),
     listGoals(),
     listGoalCategoryOptions(),
-    getDueGoalCheckIns(),
     getLuminaDashboardQuestions(3),
   ]);
 
@@ -44,7 +40,6 @@ export default async function VandaagPage() {
         checkInData={checkInData}
         followUpPrompts={followUpPrompts}
       />
-      <GoalCheckInSection checkIns={dueCheckIns} />
       <GoalsAndLuminaRow
         categories={goalCategories}
         goals={goals}

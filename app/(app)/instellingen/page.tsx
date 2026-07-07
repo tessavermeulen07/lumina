@@ -13,6 +13,9 @@ export default async function InstellingenPage() {
       <ProfileForm
         aiPersonaPreference={profile.ai_persona_preference}
         email={profile.email}
+        eveningReflectionTime={profile.evening_reflection_time}
+        goalsCheckinTime={profile.goals_checkin_time}
+        morningReflectionTime={profile.morning_reflection_time}
         username={profile.username}
       />
     </div>

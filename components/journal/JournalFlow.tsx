@@ -14,6 +14,8 @@ interface JournalFlowProps {
   isAiLoading: boolean;
   aiLoadingAfterBlockId: string | null;
   aiError: string | null;
+  aiStatus: "idle" | "loading" | "success" | "unavailable";
+  aiStatusMessage: string | null;
   onUserBlockChange?: (blockId: string, content: string) => void;
   readOnly?: boolean;
 }
@@ -67,6 +69,8 @@ export function JournalFlow({
   isAiLoading,
   aiLoadingAfterBlockId,
   aiError,
+  aiStatus,
+  aiStatusMessage,
   onUserBlockChange,
   readOnly = false,
 }: Readonly<JournalFlowProps>) {
@@ -94,6 +98,20 @@ export function JournalFlow({
               />
               {isAiLoading && aiLoadingAfterBlockId === block.id ? (
                 <p className="mt-4 text-sm text-lumina-500">Even nadenken…</p>
+              ) : null}
+              {aiStatus === "success" &&
+              aiStatusMessage &&
+              aiLoadingAfterBlockId === block.id ? (
+                <p className="mt-4 text-sm text-lumina-700 dark:text-lumina-300">
+                  {aiStatusMessage}
+                </p>
+              ) : null}
+              {aiStatus === "unavailable" &&
+              aiStatusMessage &&
+              aiLoadingAfterBlockId === block.id ? (
+                <p className="mt-4 text-sm text-lumina-700 dark:text-lumina-300">
+                  {aiStatusMessage}
+                </p>
               ) : null}
               {aiError && aiLoadingAfterBlockId === block.id ? (
                 <p className="mt-4 text-sm text-red-600" role="alert">

@@ -19,7 +19,7 @@ export function GoalCheckInSection({
       </h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {checkIns.map((checkIn) => (
-          <GoalCheckInCard key={checkIn.id} data={checkIn} />
+          <GoalCheckInCard key={checkIn.queueItemId ?? checkIn.id} data={checkIn} />
         ))}
       </div>
     </section>
