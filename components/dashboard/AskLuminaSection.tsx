@@ -2,16 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { askLumina } from "@/lib/ai/ask-lumina";
-import type { AiInsight, Question } from "@/lib/types/database";
+import {
+  hasPersonalizedQuestions,
+  type LuminaDashboardQuestion,
+} from "@/lib/ai/lumina-dashboard-question";
 
 interface AskLuminaSectionProps {
-  questions: Question[];
-  recentInsights: AiInsight[];
+  questions: LuminaDashboardQuestion[];
 }
 
 export function AskLuminaSection({
   questions,
-  recentInsights,
 }: Readonly<AskLuminaSectionProps>) {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
   const [customQuestion, setCustomQuestion] = useState("");
@@ -20,6 +21,7 @@ export function AskLuminaSection({
   const [isPending, startTransition] = useTransition();
 
   const activeQuestion = selectedQuestion ?? customQuestion.trim();
+  const isPersonalized = hasPersonalizedQuestions(questions);
 
   function handleAsk(question: string) {
     setError(null);
@@ -43,14 +45,16 @@ export function AskLuminaSection({
 
       <article className="rounded-2xl border border-lumina-500/25 bg-surface p-6">
         <p className="text-muted">
-          Stel een vraag over je eerdere entries en ontdek patronen.
+          {isPersonalized
+            ? "Stel een vraag over je eerdere entries — of kies een suggestie op basis van wat Lumina al heeft opgemerkt."
+            : "Stel een vraag over je eerdere entries en ontdek patronen."}
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 grid grid-cols-1 gap-2">
           {questions.map((question) => (
             <button
               key={question.id}
-              className={`rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${
+              className={`flex h-[4.5rem] w-full items-center rounded-xl border px-4 text-left text-sm leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lumina-500 ${
                 selectedQuestion === question.question_text
                   ? "border-lumina-500 bg-lumina-500/10 text-foreground"
                   : "border-lumina-500/25 bg-background text-muted hover:border-lumina-500 hover:text-foreground"
@@ -61,9 +65,10 @@ export function AskLuminaSection({
                 setCustomQuestion("");
                 handleAsk(question.question_text);
               }}
+              title={question.question_text}
               type="button"
             >
-              {question.question_text}
+              <span className="line-clamp-2">{question.question_text}</span>
             </button>
           ))}
         </div>
@@ -102,24 +107,6 @@ export function AskLuminaSection({
             <p className="mt-2 whitespace-pre-wrap leading-relaxed text-foreground">
               {answer}
             </p>
-          </div>
-        ) : null}
-
-        {recentInsights.length > 0 ? (
-          <div className="mt-6 space-y-3">
-            <p className="text-sm font-medium text-lumina-500">
-              Recente inzichten
-            </p>
-            {recentInsights.map((insight) => (
-              <div
-                key={insight.id}
-                className="rounded-xl border border-lumina-500/15 bg-background p-4"
-              >
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {insight.insight_text}
-                </p>
-              </div>
-            ))}
           </div>
         ) : null}
       </article>

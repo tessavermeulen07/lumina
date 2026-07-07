@@ -3,6 +3,7 @@ import { getCheckInWritingContext } from "@/lib/dashboard/get-check-in-context";
 import { isEveningCheckInAvailable } from "@/lib/dashboard/evening-check-in";
 import { getReflectionPromptById } from "@/lib/dashboard/get-carousel-prompts";
 import { getEntry } from "@/lib/entries/get-entry";
+import { getGoalWritingContext } from "@/lib/habits/get-due-intention-checkins";
 import {
   ensureTrailingUserBlock,
   listEntryBlocks,
@@ -19,13 +20,16 @@ interface SchrijfPageProps {
     id?: string;
     reflectie?: string;
     vervolg?: string;
+    doel?: string;
+    intentie?: string;
   }>;
 }
 
 const validReflectionPeriods = new Set<ReflectionPeriod>(["ochtend", "avond"]);
 
 export default async function SchrijfPage({ searchParams }: SchrijfPageProps) {
-  const { prompt, id, reflectie, vervolg } = await searchParams;
+  const { prompt, id, reflectie, vervolg, doel, intentie } = await searchParams;
+  const goalId = doel ?? intentie;
 
   if (id) {
     const entry = await getEntry(id);
@@ -44,6 +48,22 @@ export default async function SchrijfPage({ searchParams }: SchrijfPageProps) {
         initialEntryId={entry.id}
         initialIsBookmarked={entry.is_bookmarked}
         initialIsPrivate={entry.is_private}
+      />
+    );
+  }
+
+  if (goalId) {
+    const context = await getGoalWritingContext(goalId);
+
+    if (!context) {
+      notFound();
+    }
+
+    return (
+      <WritingArea
+        goalId={context.id}
+        goalPrompt={context.aiCheckinPrompt}
+        hint={context.aiCheckinPrompt}
       />
     );
   }

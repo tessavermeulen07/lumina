@@ -1,39 +1,62 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { saveGoalCategory } from "@/lib/habits/save-goal-category";
+import { builtinGoalCategories } from "@/lib/goals/category-labels";
 import {
+  defaultGoalCategory,
   goalFrequencyOptions,
   type Goal,
+  type GoalCategoryOption,
   type GoalFrequency,
 } from "@/lib/types/goal";
+
+const newCategoryOptionValue = "__new_category__";
 
 const fieldClassName =
   "w-full rounded-xl border border-lumina-500/25 bg-surface px-4 py-3 text-foreground placeholder:text-muted focus:border-lumina-500 focus:outline-none focus:ring-2 focus:ring-lumina-100/50";
 
 interface AddGoalModalProps {
   isOpen: boolean;
+  categories: GoalCategoryOption[];
   onClose: () => void;
-  onAdd: (goal: Omit<Goal, "id">) => void;
+  onAdd: (goal: Omit<Goal, "id" | "categoryLabel">) => void;
 }
 
-const emptyForm = {
+const emptyForm: {
+  name: string;
+  category: string;
+  frequency: GoalFrequency;
+  description: string;
+  newCategoryName: string;
+} = {
   name: "",
-  frequency: "een-keer" as GoalFrequency,
+  category: defaultGoalCategory,
+  frequency: "een-keer",
   description: "",
+  newCategoryName: "",
 };
 
 export function AddGoalModal({
   isOpen,
+  categories,
   onClose,
   onAdd,
 }: Readonly<AddGoalModalProps>) {
+  const router = useRouter();
   const titleId = useId();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(emptyForm);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   const handleClose = useCallback(() => {
     setForm(emptyForm);
+    setShowNewCategory(false);
+    setError(null);
     onClose();
   }, [onClose]);
 
@@ -54,17 +77,64 @@ export function AddGoalModal({
 
   if (!isOpen) return null;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+
     const trimmedName = form.name.trim();
     if (!trimmedName) return;
 
+    let category = form.category;
+
+    if (showNewCategory) {
+      const trimmedCategoryName = form.newCategoryName.trim();
+      if (!trimmedCategoryName) {
+        setError("Geef je nieuwe categorie een naam.");
+        return;
+      }
+
+      setIsSavingCategory(true);
+      const result = await saveGoalCategory(trimmedCategoryName);
+      setIsSavingCategory(false);
+
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      category = result.id;
+    }
+
     onAdd({
       name: trimmedName,
+      category,
       frequency: form.frequency,
       description: form.description.trim(),
     });
     handleClose();
+    router.refresh();
+  }
+
+  const builtinCategories =
+    categories.filter((category) => !category.isCustom).length > 0
+      ? categories.filter((category) => !category.isCustom)
+      : builtinGoalCategories.map((category) => ({
+          value: category.value,
+          label: category.label,
+          isCustom: false,
+        }));
+  const customCategories = categories.filter((category) => category.isCustom);
+
+  function handleCategoryChange(value: string) {
+    if (value === newCategoryOptionValue) {
+      setShowNewCategory(true);
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      category: value,
+    }));
   }
 
   return (
@@ -83,10 +153,10 @@ export function AddGoalModal({
         role="dialog"
       >
         <h2 className="text-lg font-semibold text-foreground" id={titleId}>
-          Intentie toevoegen
+          Doel toevoegen
         </h2>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-5 space-y-4" onSubmit={(event) => void handleSubmit(event)}>
           <div>
             <label
               className="mb-1.5 block text-sm font-medium text-foreground"
@@ -101,10 +171,75 @@ export function AddGoalModal({
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder="Een taak, een gewoonte of doel..."
+              placeholder="Wat wil je bereiken?"
               type="text"
               value={form.name}
             />
+          </div>
+
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium text-foreground"
+              htmlFor="goal-category"
+            >
+              Categorie
+            </label>
+            {!showNewCategory ? (
+              <select
+                className={fieldClassName}
+                id="goal-category"
+                onChange={(event) => handleCategoryChange(event.target.value)}
+                value={form.category}
+              >
+                <optgroup label="Standaard">
+                  {builtinCategories.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </optgroup>
+                {customCategories.length > 0 ? (
+                  <optgroup label="Eigen categorieën">
+                    {customCategories.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                <optgroup label="Meer">
+                  <option value={newCategoryOptionValue}>
+                    + Nieuwe categorie…
+                  </option>
+                </optgroup>
+              </select>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  className={fieldClassName}
+                  id="goal-new-category"
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      newCategoryName: event.target.value,
+                    }))
+                  }
+                  placeholder="Naam van je categorie"
+                  type="text"
+                  value={form.newCategoryName}
+                />
+                <button
+                  className="text-sm text-muted transition-colors hover:text-foreground"
+                  onClick={() => {
+                    setShowNewCategory(false);
+                    setForm((current) => ({ ...current, newCategoryName: "" }));
+                  }}
+                  type="button"
+                >
+                  Bestaande categorie kiezen
+                </button>
+              </div>
+            )}
           </div>
 
           <div>
@@ -153,11 +288,17 @@ export function AddGoalModal({
             />
           </div>
 
+          {error ? (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
+
           <div className="flex justify-end gap-3 pt-2">
             <Button onClick={handleClose} type="button" variant="outline">
               Annuleren
             </Button>
-            <Button type="submit" variant="primary">
+            <Button disabled={isSavingCategory} type="submit" variant="primary">
               Toevoegen
             </Button>
           </div>

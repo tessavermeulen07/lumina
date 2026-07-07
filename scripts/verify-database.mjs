@@ -37,6 +37,7 @@ const tables = [
   "emotion_analyses",
   "habits_and_intentions",
   "habit_logs",
+  "goal_categories",
   "ai_insights",
   "weekly_reports",
   "questions",

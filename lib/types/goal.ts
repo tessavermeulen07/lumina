@@ -5,11 +5,25 @@ export type GoalFrequency =
   | "maandelijks"
   | "altijd";
 
+export type BuiltinGoalCategory =
+  | "persoonlijk"
+  | "werk"
+  | "huishouden"
+  | "hobbies";
+
 export interface Goal {
   id: string;
   name: string;
+  category: string;
+  categoryLabel: string;
   frequency: GoalFrequency;
   description: string;
+}
+
+export interface GoalCategoryOption {
+  value: string;
+  label: string;
+  isCustom: boolean;
 }
 
 export const goalFrequencyOptions: {
@@ -29,3 +43,5 @@ export function getFrequencyLabel(frequency: GoalFrequency): string {
     frequency
   );
 }
+
+export const defaultGoalCategory: BuiltinGoalCategory = "persoonlijk";

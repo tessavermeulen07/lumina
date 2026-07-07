@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { linkPromptToEntry } from "@/lib/dashboard/reflection-prompt-actions";
 import { clearReflectionCacheForToday } from "@/lib/dashboard/reflection-cache";
+import { logIntentionCheckin } from "@/lib/habits/log-intention-checkin";
 import { isEntryUnlockedForUser } from "@/lib/entries/private-entry-access";
 import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
@@ -24,6 +25,8 @@ export async function finalizeEntry(input: {
   blocks: EntryBlock[];
   reflectionPeriod?: ReflectionPeriod;
   reflectionPromptId?: string;
+  goalId?: string;
+  goalPrompt?: string;
 }): Promise<{ analysis: EntryAnalysis } | { error: string }> {
   await getAuthenticatedUser();
   let entryId = input.entryId;
@@ -110,6 +113,14 @@ export async function finalizeEntry(input: {
 
   if (input.reflectionPeriod) {
     await clearReflectionCacheForToday();
+  }
+
+  if (input.goalId) {
+    await logIntentionCheckin({
+      habitId: input.goalId,
+      status: "completed",
+      aiCheckinPrompt: input.goalPrompt ?? null,
+    });
   }
 
   revalidatePath("/vandaag");
