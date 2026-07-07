@@ -18,10 +18,10 @@ export function DailyJournalSection({
   return (
     <div className="space-y-10">
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-foreground md:text-xl">
           Dagelijkse reflectie
         </h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <CheckInCard data={checkInData.ochtend} />
           <CheckInCard data={checkInData.avond} />
         </div>

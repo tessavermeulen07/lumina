@@ -71,7 +71,7 @@ export function GoalsSection({
   return (
     <>
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Doelen</h2>
+        <h2 className="text-lg font-semibold text-foreground md:text-xl">Doelen</h2>
 
         <article className="rounded-2xl border border-lumina-500/25 bg-surface p-6">
           <div className="flex items-start justify-between gap-4">

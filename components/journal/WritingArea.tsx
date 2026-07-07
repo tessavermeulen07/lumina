@@ -495,7 +495,7 @@ function WritingAreaContent({
   return (
     <>
       <section className="mx-auto flex min-h-[70vh] max-w-prose flex-col justify-center px-2">
-        <p className="whitespace-pre-line font-serif text-lg leading-relaxed text-muted">
+        <p className="whitespace-pre-line font-serif text-base leading-relaxed text-muted md:text-lg">
           {hint}
         </p>
 

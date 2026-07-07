@@ -109,7 +109,7 @@ const features = [
 export function FeatureGrid() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-16" id="functies">
-      <h2 className="mb-4 text-center font-serif text-3xl text-foreground">
+      <h2 className="mb-4 text-center font-serif text-2xl text-foreground">
         Wat Lumina voor je doet
       </h2>
       <p className="mx-auto mb-12 max-w-2xl text-center leading-relaxed text-muted">

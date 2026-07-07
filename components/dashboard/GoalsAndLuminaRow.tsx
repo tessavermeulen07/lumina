@@ -15,7 +15,7 @@ export function GoalsAndLuminaRow({
   questions,
 }: Readonly<GoalsAndLuminaRowProps>) {
   return (
-    <section className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
       <GoalsSection categories={categories} initialGoals={goals} />
       <AskLuminaSection questions={questions} />
     </section>
