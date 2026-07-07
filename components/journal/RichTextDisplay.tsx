@@ -2,7 +2,7 @@
 
 import { RichTextImageContainer } from "@/components/journal/RichTextImageContainer";
 import { normalizeEntryImageHtml } from "@/lib/utils/entry-images";
-import { sanitizeRichTextHtml } from "@/lib/utils/rich-text";
+import { sanitizeRichTextHtml } from "@/lib/utils/sanitize-rich-text-html";
 import { richTextProseClass } from "@/lib/journal/rich-text-styles";
 
 interface RichTextDisplayProps {
