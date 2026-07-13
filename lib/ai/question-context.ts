@@ -11,6 +11,7 @@ export type ToolbarAiAction =
   | "vraag"
   | "ga_dieper"
   | "coach_me"
+  | "vat_samen"
   | "geef_inzicht"
   | "eerdere_gedragspatronen"
   | "actie_punten"
@@ -27,6 +28,7 @@ const TOOLBAR_ACTION_CATEGORIES: Record<ToolbarAiAction, QuestionCategory[]> = {
   vraag: ["emotieregulatie", "patronen", "stress_angst"],
   ga_dieper: ["patronen", "emotieregulatie"],
   coach_me: ["intenties", "stress_angst"],
+  vat_samen: [],
   geef_inzicht: ["patronen", "emotieregulatie"],
   eerdere_gedragspatronen: ["patronen", "stress_angst"],
   actie_punten: ["intenties"],
