@@ -1,73 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumina
 
-## Getting Started
+Lumina is a Dutch reflection-app that helps you write daily entries, let's you remember intentions and habits and add them, and receive AI-powered insights.
 
-First, run the development server:
+![Screenshot of the landing page of Lumina.](../public/landing-page.png)
+
+![Screenshot of the dashboard after login.](../public/after-login.png)
+
+![Screenshot of the statistics page after login.](../public/statistics.png)
+
+## Tech stack
+
+- [Next.js 16] ([https://nextjs.org/](https://nextjs.org/)) (App Router)
+- [React 19] ([https://react.dev/](https://react.dev/)) + TypeScript
+- [Tailwind CSS 4] ([https://tailwindcss.com/](https://tailwindcss.com/))
+- [Supabase] ([https://supabase.com](https://supabase.com)) (auth, database, storage)
+- [OpenAI] ([https://openai.com/](https://openai.com/)) (AI coach, entry analysis, weekly reports)
+- [Emotion Analysis API] ([https://rapidapi.com/twinword/api/emotion-analysis](https://rapidapi.com/twinword/api/emotion-analysis)) (Detecting emotions in a text: disgust, sadness, anger, joy, surprise, and fear)
+
+
+
+## Prerequisites
+
+- Node.js 20 or later
+- A Supabase project
+- An OpenAI API key
+- An Emotion Analysis API plan
+
+
+
+## Getting started
+
+
+
+### 1. Clone and install
+
+```bash
+git clone git@github.com:tessavermeulen07/lumina.git
+cd lumina
+npm install
+```
+
+
+
+### 2. Environment variables
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+
+| Variable                        | Required   | Description                                                         |
+| ------------------------------- | ---------- | ------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Yes        | Supabase project API URL                                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes        | Supabase anonymous (public) key                                     |
+| `SUPABASE_SECRET_KEY`           | Yes        | Supabase service role key (server-only, never expose to the client) |
+|                                 |            |                                                                     |
+| `OPENAI_API_KEY`                | Yes        | Invite code required for new user registration                      |
+| `CRON_SECRET`                   | Production | Secret token for the daily check-in cron endpoint                   |
+| `RAPIDAPI_KEY`                  | Optional   | RapidAPI key for TwinWord sentiment analysis                        |
+| `TWINWORD_ENABLED`              | Optional   | Set to `false` to disable TwinWord                                  |
+| `TWINWORD_MONTHLY_LIMIT`        | Optional   | Montly API call limit for TwinWord                                  |
+
+
+> **Note:** `NEXT_PUBLIC_SUPABASE_URL` is the HTTP API URL for the app, not the database connection string. For migrations, use `SUPABASE_DB_URL` separately (Supabase Dashboard → Project Settings → Database → Connection string URI).
+
+
+
+### 3. Database setup
+
+Apply all migrations to your Supabase project:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
+```
+
+Verify the schema and Row Level Security:
+
+```bash
+npm run db:verify
+npm run db:verify-rls
+```
+
+
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+| command                      | Description                               |
+| ---------------------------- | ----------------------------------------- |
+| `npm run dev`                | Start the developer server                |
+| `npm run build`              | Create a production build                 |
+| `npm run start`              | Start the production server               |
+| `npm run lint`               | Run ESLint                                |
+| ```npm run db:migrate        | Apply the initial schema migration        |
+| `npm run db:apply-questions` | Apply the questions table migration       |
+| `npm run db:verify`          | Verify all required database tables exist |
+| `npm run db:verify-rls`      | Verify Row Level Security policies        |
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app is configured for [Vercel] ([https://vercel.com/](https://vercel.com/)). A cron job runs daily at 05:00 UTC to process intention check-ins (`api/cron/check-ins`). Set `CRON_SECRET` in your production environment variables.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Registration
 
-## Environment variables
-
-Kopieer `.env.example` naar `.env.local` en vul je waarden in.
-
-## Check-in scheduler (timezone-aware)
-
-- Cron route: `/api/cron/check-ins`
-- Vereiste env vars: `CRON_SECRET` + `SUPABASE_SECRET_KEY` (of `SUPABASE_SERVICE_ROLE_KEY`) + `NEXT_PUBLIC_SUPABASE_URL`
-- Autorisatie: `Authorization: Bearer <CRON_SECRET>` of header `x-cron-secret`
-- Vercel cron: geconfigureerd in `vercel.json` met dagelijks schema `0 5 * * *` (05:00 UTC; Hobby-planlimiet)
-- Middleware laat `/api/cron/*` door; beveiliging loopt via `CRON_SECRET` (niet via login)
-
-Deze job zet due doelen automatisch in de in-app check-in inbox (`intention_checkin_queue`), met `due_for_date` op de lokale kalenderdag van elke gebruiker (`profiles.timezone`). Popups en reflectie-completion gebruiken dezelfde tijdzone. Geen push of e-mail in deze fase.
-
-**Hybrid scheduling:** het app-layout roept bij elk paginabezoek dezelfde scheduler aan (`ensureDueCheckins`), zodat actieve gebruikers check-ins krijgen op hun lokale dag zonder uurlijkse cron (niet beschikbaar op Vercel Hobby). De dagelijkse cron is een vangnet voor inactieve gebruikers. Vereist `SUPABASE_SERVICE_ROLE_KEY` (of `SUPABASE_SECRET_KEY`) in productie én `.env.local`; `CRON_SECRET` is lokaal optioneel (alleen nodig voor handmatige curl-test van de cron-route).
-
-**Migratie:** draai `supabase/migrations/20260713130000_profile_timezone.sql` voor het `timezone`-veld op profielen.
-
-**Let op:** als een gebruiker zijn tijdzone wijzigt, blijven bestaande queue-rijen op de oude `due_for_date` staan.
-
-### Productie-checklist (Vercel)
-
-1. Zet in **Production** environment variables:
-   - `CRON_SECRET` — genereer met `openssl rand -base64 32`
-   - `SUPABASE_SECRET_KEY` of `SUPABASE_SERVICE_ROLE_KEY` — zelfde project als `NEXT_PUBLIC_SUPABASE_URL`
-2. **Redeploy** production na env-wijzigingen.
-3. Test handmatig:
-
-```bash
-curl -sS -H "Authorization: Bearer <CRON_SECRET>" \
-  "https://<jouw-productie-domein>/api/cron/check-ins"
-```
-
-Verwacht `200` met `{ "success": true, ... }`. Bij ontbrekende `CRON_SECRET`: `503`. Bij verkeerd geheim: `401`.
-
-Zie ook [`.cursor/plans/productie-cron-scheduler.md`](.cursor/plans/productie-cron-scheduler.md) en [`.cursor/plans/timezone-aware-cron.md`](.cursor/plans/timezone-aware-cron.md).
+New users need the invite code configured in `REGISTRATION_INVITE_CODE` to register.
