@@ -4,6 +4,7 @@ import {
   buildUserMessage,
   type InteractionMode,
 } from "@/lib/ai/agent-prompt";
+import { mapOpenAiError } from "@/lib/ai/openai-errors";
 import type { ToolbarAiAction } from "@/lib/ai/question-context";
 import {
   executeLuminaTool,
@@ -27,20 +28,6 @@ export interface AgentInput {
 export interface AgentResult {
   answer: string;
   insightId?: string;
-}
-
-function mapAgentError(error: unknown): string {
-  if (error instanceof OpenAI.APIError) {
-    if (error.status === 429) {
-      return "Lumina is tijdelijk niet beschikbaar door drukte. Probeer het zo opnieuw.";
-    }
-
-    if (typeof error.status === "number" && error.status >= 500) {
-      return "Lumina is tijdelijk niet beschikbaar. Je kunt wel gewoon doorgaan met schrijven.";
-    }
-  }
-
-  return "Lumina is tijdelijk niet beschikbaar. Je kunt wel gewoon doorgaan met schrijven.";
 }
 
 function extractInsightId(toolResult: string): string | undefined {
@@ -146,6 +133,6 @@ export async function runLuminaAgent(
 
     return { error: "AI kon de vraag niet volledig verwerken." };
   } catch (error) {
-    return { error: mapAgentError(error) };
+    return { error: mapOpenAiError(error, "agent") };
   }
 }

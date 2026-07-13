@@ -37,6 +37,10 @@ import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 const AUTO_SAVE_DELAY_MS = 1500;
 const SAVED_STATUS_RESET_MS = 2000;
 
+function formatFinalizeError(message: string): string {
+  return `${message} Je tekst is als concept bewaard — probeer opnieuw op te slaan.`;
+}
+
 type DraftStatus = "idle" | "saving" | "saved" | "error";
 type AiStatus = "idle" | "loading" | "success" | "unavailable";
 
@@ -79,6 +83,7 @@ function WritingAreaContent({
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>("idle");
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [reviewAnalysis, setReviewAnalysis] = useState<EntryAnalysis | null>(
     null,
@@ -318,7 +323,7 @@ function WritingAreaContent({
 
   async function handleFinalize() {
     setIsFinalizing(true);
-    setDraftError(null);
+    setFinalizeError(null);
 
     await flushPendingSaves();
 
@@ -334,11 +339,11 @@ function WritingAreaContent({
     setIsFinalizing(false);
 
     if ("error" in result) {
-      setDraftStatus("error");
-      setDraftError(result.error);
+      setFinalizeError(formatFinalizeError(result.error));
       return;
     }
 
+    setFinalizeError(null);
     setReviewAnalysis(result.analysis);
   }
 
@@ -544,6 +549,7 @@ function WritingAreaContent({
           canSave={canSave}
           draftError={draftError}
           draftStatus={draftStatus}
+          finalizeError={finalizeError}
           isBookmarked={isBookmarked}
           isFinalizing={isFinalizing}
           isPrivate={isPrivate}
