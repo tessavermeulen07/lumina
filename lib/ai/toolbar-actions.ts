@@ -4,7 +4,7 @@ const TOOLBAR_ACTION_LABELS: Record<string, ToolbarAiAction> = {
   Vraag: "vraag",
   "Ga dieper": "ga_dieper",
   "Coach me": "coach_me",
-  "Vat samen": "geef_inzicht",
+  "Vat samen": "vat_samen",
   "Geef inzicht": "geef_inzicht",
   "Eerdere gedragspatronen": "eerdere_gedragspatronen",
   "Actie punten": "actie_punten",
@@ -15,6 +15,7 @@ const ACTION_TO_LABEL: Record<ToolbarAiAction, string> = {
   vraag: "Vraag",
   ga_dieper: "Ga dieper",
   coach_me: "Coach me",
+  vat_samen: "Vat samen",
   geef_inzicht: "Geef inzicht",
   eerdere_gedragspatronen: "Eerdere gedragspatronen",
   actie_punten: "Actie punten",
@@ -29,4 +30,8 @@ export function mapToolbarLabelToAction(
 
 export function getToolbarActionLabel(action: ToolbarAiAction): string {
   return ACTION_TO_LABEL[action];
+}
+
+export function resolveToolbarActionLabel(action: string): string {
+  return ACTION_TO_LABEL[action as ToolbarAiAction] ?? action;
 }

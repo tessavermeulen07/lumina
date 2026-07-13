@@ -76,8 +76,10 @@ const TOOLBAR_ACTION_INSTRUCTIONS: Record<ToolbarAiAction, string> = {
     "Actie: Ga dieper — Analyseer de huidige entry. Gebruik 'analyze_entry_sentiment' om onderliggende, onuitgesproken emoties te detecteren. Stel een scherpe, open vervolgvraag die de gebruiker uitnodigt om de échte oorzaak of motivatie achter deze entry te onderzoeken.",
   coach_me:
     "Actie: Coach me — Bied actieve begeleiding op de huidige situatie. Help de gebruiker om de gedachten in de huidige entry te ordenen. Wees ondersteunend maar sturend, en help hen om uit een evenuele mentale vizieuze cirkel te breken",
+  vat_samen:
+    "Actie: Vat samen — Vat de VOLLEDIGE post samen op basis van de entry-thread in het gebruikersbericht: alle gebruikerstekst én alle eerdere Lumina-reacties in deze post. Wees neutraal en beschrijvend; geen interpretatie, geen advies, geen vervolgvraag. Benoem geen thema's, patronen of cognitieve vervormingen. Lengte: beknopt maar volledig — gebruik korte alinea's of opsomming als de thread lang is; dek de hele conversatie. Gebruik NIET 'search_journal_history', NIET 'fetch_reflection_framework', NIET 'save_ai_insight'. Je output mag geen emotie- of patroonanalyse bevatten.",
   geef_inzicht:
-    "Actie: Geef inzicht — Gebruik 'analyze_entry_sentiment' om de huidige tekst te ontleden. Geef een uiterst beknopte spiegeling (maximaal twee zinnen) van wat de gebruiker schrijft, en benoem direct de overkoepende thema's, emotionele tonen en eventuele denkpatronen (zoals cognitieve vervormingen) die in DEZE specifieke entry naar voeren komen. Zoek NIET in eerdere entries.",
+    "Actie: Geef inzicht — Gebruik 'analyze_entry_sentiment' om het actieve schrijfsegment te ontleden. Focus op de huidige tekst, niet op een herhaling van de volledige thread. Geef een korte spiegeling (maximaal één zin) en benoem daarna de overkoepende thema's, emotionele tonen en eventuele denkpatronen (zoals cognitieve vervormingen) in dit segment. Zoek NIET in eerdere entries. Geen vervolgvraag; geen 'save_ai_insight'.",
   eerdere_gedragspatronen:
     "Actie: Eerdere gedragspatronen — Je BENT VERPLICHT om 'search_journal_history' aan te roepen. Vergelijk de thema's uit de huidige tekst met eerdere entries. Leg patronen bloot: is dit een terugkerende trigger, een bekende valkuil, of is er juist sprake van groei ten opzichte van vorige keren? Benoem dit concreet.",
   actie_punten:
@@ -137,12 +139,24 @@ export function buildUserMessage(input: BuildUserMessageInput): string {
     parts.push(`Gevraagde AI-actie: ${label} (${input.toolbarAction})`);
   }
 
-  if (input.entryThreadContext?.trim()) {
-    parts.push(`Volledige entry-thread:\n${input.entryThreadContext.trim()}`);
-  }
+  if (input.toolbarAction === "vat_samen") {
+    if (input.entryThreadContext?.trim()) {
+      parts.push(
+        `Volledige post (samenvatting-bron):\n${input.entryThreadContext.trim()}`,
+      );
+    } else if (input.entryContent?.trim()) {
+      parts.push(
+        `Volledige post (samenvatting-bron):\n${input.entryContent.trim()}`,
+      );
+    }
+  } else {
+    if (input.entryThreadContext?.trim()) {
+      parts.push(`Volledige entry-thread:\n${input.entryThreadContext.trim()}`);
+    }
 
-  if (input.entryContent?.trim()) {
-    parts.push(`Actief schrijfsegment (focus):\n${input.entryContent.trim()}`);
+    if (input.entryContent?.trim()) {
+      parts.push(`Actief schrijfsegment (focus):\n${input.entryContent.trim()}`);
+    }
   }
 
   return parts.join("\n\n");

@@ -3,8 +3,7 @@
 import { RichTextDisplay } from "@/components/journal/RichTextDisplay";
 import { RichTextEditor } from "@/components/journal/RichTextEditor";
 import { useEditorBridge } from "@/components/journal/EditorBridge";
-import { getToolbarActionLabel } from "@/lib/ai/toolbar-actions";
-import type { ToolbarAiAction } from "@/lib/ai/question-context";
+import { resolveToolbarActionLabel } from "@/lib/ai/toolbar-actions";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
 import { isRichTextEmpty } from "@/lib/utils/rich-text";
 
@@ -21,21 +20,7 @@ interface JournalFlowProps {
 }
 
 function getActionLabel(action: string): string {
-  const knownActions: ToolbarAiAction[] = [
-    "vraag",
-    "ga_dieper",
-    "coach_me",
-    "geef_inzicht",
-    "eerdere_gedragspatronen",
-    "actie_punten",
-    "geef_feedback",
-  ];
-
-  if (knownActions.includes(action as ToolbarAiAction)) {
-    return getToolbarActionLabel(action as ToolbarAiAction);
-  }
-
-  return action;
+  return resolveToolbarActionLabel(action);
 }
 
 function EditableUserBlock({
