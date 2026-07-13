@@ -21,12 +21,12 @@ isProject: false
 
 ## Context
 
-De scheduler vult dagelijks de in-app check-in inbox (`intention_checkin_queue`). Gebruikers zien daardoor open doelen op **Vandaag** — zonder push of e-mail.
+De scheduler vult uurlijks de in-app check-in inbox (`intention_checkin_queue`), per gebruiker op basis van `profiles.timezone`. Gebruikers zien daardoor open doelen op **Vandaag** — zonder push of e-mail.
 
 ```mermaid
 flowchart LR
   subgraph prod [Productie]
-    VercelCron[Vercel Cron 05:00 UTC]
+    VercelCron["Vercel Cron elk uur"]
     CronRoute["GET /api/cron/check-ins"]
     Scheduler[scheduleDueCheckinsForToday]
     AdminClient[createAdminClient]
@@ -85,12 +85,13 @@ Verwacht **200** met `{ "success": true, ... }`.
 
 - Geen push-notificaties
 - Geen e-mail / Resend
-- Geen wijziging aan scheduler-logica
+
+Zie [timezone-aware-cron.md](timezone-aware-cron.md) voor de timezone-aware scheduler-implementatie.
 
 ## Acceptatiecriteria
 
 1. `CRON_SECRET` in Vercel Production + redeploy
 2. Service role key in Vercel Production
 3. Handmatige curl geeft 200
-4. Gebruikers krijgen dagelijks in-app check-ins
+4. Gebruikers krijgen in-app check-ins op hun lokale dag
 5. Push/mail niet toegevoegd

@@ -3,9 +3,10 @@ import { getReflectionCompletion } from "@/lib/dashboard/get-reflection-completi
 import { createClient } from "@/lib/supabase/server";
 import type { CheckinPopupType } from "@/lib/types/database";
 import {
-  getAmsterdamDateString,
-  hasPassedAmsterdamTime,
-} from "@/lib/utils/amsterdam-time";
+  getDateStringInTimezone,
+  hasPassedTimeInTimezone,
+  resolveTimezone,
+} from "@/lib/utils/user-timezone";
 
 export interface PendingPopup {
   type: CheckinPopupType;
@@ -79,7 +80,8 @@ export async function getPendingPopup(): Promise<PendingPopup | null> {
   const user = await getAuthenticatedUser();
   const profile = await getProfile();
   const supabase = await createClient();
-  const today = getAmsterdamDateString();
+  const timezone = resolveTimezone(profile.timezone);
+  const today = getDateStringInTimezone(timezone);
   const completion = await getReflectionCompletion();
   const goalsCheckinTime = resolveTimeOrDefault(profile.goals_checkin_time, "09:00");
   const morningReflectionTime = resolveTimeOrDefault(
@@ -101,16 +103,22 @@ export async function getPendingPopup(): Promise<PendingPopup | null> {
 
   if (
     (pendingGoals ?? 0) > 0 &&
-    hasPassedAmsterdamTime(goalsCheckinTime)
+    hasPassedTimeInTimezone(goalsCheckinTime, timezone)
   ) {
     candidateTypes.push("goals");
   }
 
-  if (!completion.ochtend && hasPassedAmsterdamTime(morningReflectionTime)) {
+  if (
+    !completion.ochtend &&
+    hasPassedTimeInTimezone(morningReflectionTime, timezone)
+  ) {
     candidateTypes.push("ochtend_reflectie");
   }
 
-  if (!completion.avond && hasPassedAmsterdamTime(eveningReflectionTime)) {
+  if (
+    !completion.avond &&
+    hasPassedTimeInTimezone(eveningReflectionTime, timezone)
+  ) {
     candidateTypes.push("avond_reflectie");
   }
 

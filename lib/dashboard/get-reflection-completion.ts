@@ -1,11 +1,14 @@
-import { getAuthenticatedUser } from "@/lib/auth/get-profile";
+import { getAuthenticatedUser, getProfile } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
 import type { ReflectionPeriod } from "@/lib/types/database";
 import {
   entryMatchesDate,
   getFinalizedEntriesWithAnalyses,
-  getTodayDateString,
 } from "@/lib/dashboard/reflection-entries";
+import {
+  getDateStringInTimezone,
+  resolveTimezone,
+} from "@/lib/utils/user-timezone";
 
 export interface ReflectionCompletion {
   ochtend: boolean;
@@ -16,8 +19,12 @@ export async function getReflectionCompletion(
   referenceDate = new Date(),
 ): Promise<ReflectionCompletion> {
   const user = await getAuthenticatedUser();
+  const profile = await getProfile();
   const supabase = await createClient();
-  const today = getTodayDateString(referenceDate);
+  const today = getDateStringInTimezone(
+    resolveTimezone(profile.timezone),
+    referenceDate,
+  );
 
   const { data: entries } = await supabase
     .from("entries")

@@ -8,11 +8,18 @@ import { createClient } from "@/lib/supabase/client";
 import { coachOptions } from "@/lib/constants/onboarding";
 import { updateProfile } from "@/lib/profile/update-profile";
 import type { AiCoachStyle } from "@/lib/types/onboarding";
+import {
+  COMMON_TIMEZONE_OPTIONS,
+  DEFAULT_TIMEZONE,
+  detectBrowserTimezone,
+  resolveTimezone,
+} from "@/lib/utils/user-timezone";
 
 interface ProfileFormProps {
   username: string;
   email?: string;
   aiPersonaPreference: AiCoachStyle | null;
+  timezone?: string | null;
   goalsCheckinTime?: string | null;
   morningReflectionTime?: string | null;
   eveningReflectionTime?: string | null;
@@ -27,6 +34,7 @@ export function ProfileForm({
   username: initialUsername,
   email,
   aiPersonaPreference: initialCoachStyle,
+  timezone: initialTimezone,
   goalsCheckinTime: initialGoalsCheckinTime,
   morningReflectionTime: initialMorningReflectionTime,
   eveningReflectionTime: initialEveningReflectionTime,
@@ -34,9 +42,13 @@ export function ProfileForm({
   const router = useRouter();
   const usernameId = useId();
   const coachStyleId = useId();
+  const timezoneId = useId();
   const [username, setUsername] = useState(initialUsername);
   const [coachStyle, setCoachStyle] = useState<AiCoachStyle | "">(
     initialCoachStyle ?? "",
+  );
+  const [timezone, setTimezone] = useState(
+    resolveTimezone(initialTimezone ?? DEFAULT_TIMEZONE),
   );
   const [goalsCheckinTime, setGoalsCheckinTime] = useState(
     toTimeInputValue(initialGoalsCheckinTime, "09:00"),
@@ -63,6 +75,12 @@ export function ProfileForm({
     });
   }, []);
 
+  useEffect(() => {
+    if (!initialTimezone) {
+      setTimezone(detectBrowserTimezone());
+    }
+  }, [initialTimezone]);
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
@@ -72,6 +90,7 @@ export function ProfileForm({
       const result = await updateProfile({
         username: username.trim(),
         aiPersonaPreference: coachStyle || null,
+        timezone,
         goalsCheckinTime,
         morningReflectionTime,
         eveningReflectionTime,
@@ -154,9 +173,29 @@ export function ProfileForm({
             Meldingen en herinneringen
           </h2>
           <p className="text-xs text-muted">
-            Je krijgt op deze tijden een popup. Ben je niet online, dan tonen we
-            de popup zodra je weer inlogt.
+            Je krijgt op deze tijden een popup in je eigen tijdzone. Ben je niet
+            online, dan tonen we de popup zodra je weer inlogt.
           </p>
+          <div>
+            <label
+              className="mb-1.5 block text-xs font-medium text-foreground"
+              htmlFor={timezoneId}
+            >
+              Tijdzone
+            </label>
+            <select
+              className="w-full max-w-md rounded-xl border border-lumina-500/25 bg-surface px-3 py-2 text-sm text-foreground focus:border-lumina-500 focus:outline-none focus:ring-2 focus:ring-lumina-100/50"
+              id={timezoneId}
+              onChange={(event) => setTimezone(event.target.value)}
+              value={timezone}
+            >
+              {COMMON_TIMEZONE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-foreground">

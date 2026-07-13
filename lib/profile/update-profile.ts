@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedUser } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AiCoachStyle } from "@/lib/types/onboarding";
+import { resolveTimezone } from "@/lib/utils/user-timezone";
 
 type UpdateProfileInput = {
   username: string;
   aiPersonaPreference: AiCoachStyle | null;
+  timezone: string;
   goalsCheckinTime: string;
   morningReflectionTime: string;
   eveningReflectionTime: string;
@@ -34,6 +36,7 @@ export async function updateProfile(
   const payload = {
     username: trimmedUsername,
     ai_persona_preference: input.aiPersonaPreference,
+    timezone: resolveTimezone(input.timezone),
     goals_checkin_time: input.goalsCheckinTime,
     morning_reflection_time: input.morningReflectionTime,
     evening_reflection_time: input.eveningReflectionTime,
@@ -47,6 +50,7 @@ export async function updateProfile(
   if (error) {
     const missingColumns =
       error.code === "42703" ||
+      error.message.toLowerCase().includes("timezone") ||
       error.message.toLowerCase().includes("goals_checkin_time") ||
       error.message.toLowerCase().includes("morning_reflection_time") ||
       error.message.toLowerCase().includes("evening_reflection_time");
@@ -55,7 +59,6 @@ export async function updateProfile(
       return { error: "Profiel kon niet worden bijgewerkt." };
     }
 
-    // Fallback for environments where popup-time migration is not applied yet.
     const { error: fallbackError } = await supabase
       .from("profiles")
       .update({
@@ -70,7 +73,7 @@ export async function updateProfile(
 
     return {
       error:
-        "Je profiel is deels opgeslagen. Draai nog de migratie voor herinneringstijden om deze tijden op te slaan.",
+        "Je profiel is deels opgeslagen. Draai nog de migratie voor tijdzone en herinneringstijden om deze instellingen op te slaan.",
     };
   }
 

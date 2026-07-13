@@ -24,6 +24,7 @@ export interface Profile {
   id: string;
   username: string;
   ai_persona_preference: AiCoachStyle | null;
+  timezone: string;
   goals_checkin_time: string;
   morning_reflection_time: string;
   evening_reflection_time: string;

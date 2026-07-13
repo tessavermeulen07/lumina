@@ -39,17 +39,21 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Kopieer `.env.example` naar `.env.local` en vul je waarden in.
 
-## Dagelijkse check-in scheduler
+## Check-in scheduler (timezone-aware)
 
 - Cron route: `/api/cron/check-ins`
 - Vereiste env vars: `CRON_SECRET` + `SUPABASE_SECRET_KEY` (of `SUPABASE_SERVICE_ROLE_KEY`) + `NEXT_PUBLIC_SUPABASE_URL`
 - Autorisatie: `Authorization: Bearer <CRON_SECRET>` of header `x-cron-secret`
-- Vercel cron: geconfigureerd in `vercel.json` met dagelijks schema `0 5 * * *` (05:00 UTC)
+- Vercel cron: geconfigureerd in `vercel.json` met uurlijks schema `0 * * * *` (elk heel uur UTC)
 - Middleware laat `/api/cron/*` door; beveiliging loopt via `CRON_SECRET` (niet via login)
 
-Deze job zet due doelen automatisch in de in-app check-in inbox (`intention_checkin_queue`), zodat gebruikers zonder handmatige actie nieuwe check-ins zien in `vandaag`. Geen push of e-mail in deze fase.
+Deze job zet due doelen automatisch in de in-app check-in inbox (`intention_checkin_queue`), met `due_for_date` op de lokale kalenderdag van elke gebruiker (`profiles.timezone`). Popups en reflectie-completion gebruiken dezelfde tijdzone. Geen push of e-mail in deze fase.
 
 In development roept het app-layout dezelfde scheduler automatisch aan bij elk paginabezoek (`ensureDueCheckins`), zodat je lokaal geen cron hoeft te triggeren. Vereist `SUPABASE_SERVICE_ROLE_KEY` (of `SUPABASE_SECRET_KEY`) in `.env.local`; `CRON_SECRET` is lokaal optioneel (alleen nodig voor handmatige curl-test van de cron-route).
+
+**Migratie:** draai `supabase/migrations/20260713130000_profile_timezone.sql` voor het `timezone`-veld op profielen.
+
+**Let op:** als een gebruiker zijn tijdzone wijzigt, blijven bestaande queue-rijen op de oude `due_for_date` staan.
 
 ### Productie-checklist (Vercel)
 
@@ -66,4 +70,4 @@ curl -sS -H "Authorization: Bearer <CRON_SECRET>" \
 
 Verwacht `200` met `{ "success": true, ... }`. Bij ontbrekende `CRON_SECRET`: `503`. Bij verkeerd geheim: `401`.
 
-Zie ook [`.cursor/plans/productie-cron-scheduler.md`](.cursor/plans/productie-cron-scheduler.md).
+Zie ook [`.cursor/plans/productie-cron-scheduler.md`](.cursor/plans/productie-cron-scheduler.md) en [`.cursor/plans/timezone-aware-cron.md`](.cursor/plans/timezone-aware-cron.md).

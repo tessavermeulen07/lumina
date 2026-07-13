@@ -1,14 +1,18 @@
 "use server";
 
-import { getAuthenticatedUser } from "@/lib/auth/get-profile";
+import { getAuthenticatedUser, getProfile } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
 import type { CheckinPopupType } from "@/lib/types/database";
-import { getAmsterdamDateString } from "@/lib/utils/amsterdam-time";
+import {
+  getDateStringInTimezone,
+  resolveTimezone,
+} from "@/lib/utils/user-timezone";
 
 export async function markPopupShown(type: CheckinPopupType): Promise<void> {
   const user = await getAuthenticatedUser();
+  const profile = await getProfile();
   const supabase = await createClient();
-  const today = getAmsterdamDateString();
+  const today = getDateStringInTimezone(resolveTimezone(profile.timezone));
 
   await supabase.from("checkin_popup_state").upsert(
     {
