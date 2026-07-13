@@ -2,11 +2,11 @@
 
 Lumina is a Dutch reflection-app that helps you write daily entries, let's you remember intentions and habits and add them, and receive AI-powered insights.
 
-![Screenshot of the landing page of Lumina.](../public/landing-page.png)
+![Screenshot of the landing page of Lumina.](public/landing-page.png)
 
-![Screenshot of the dashboard after login.](../public/after-login.png)
+![Screenshot of the dashboard after login.](public/after-login.png)
 
-![Screenshot of the statistics page after login.](../public/statistics.png)
+![Screenshot of the statistics page after login.](public/statistics.png)
 
 ## Tech stack
 
