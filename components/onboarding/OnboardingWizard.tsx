@@ -19,6 +19,7 @@ import type {
   OnboardingMainGoal,
   OnboardingPriority,
 } from "@/lib/types/onboarding";
+import { detectBrowserTimezone } from "@/lib/utils/user-timezone";
 
 const emptyAnswers: OnboardingAnswers = {
   mainGoal: null,
@@ -88,7 +89,10 @@ export function OnboardingWizard({
       const { completeOnboarding } = await import(
         "@/lib/profile/complete-onboarding"
       );
-      const result = await completeOnboarding(finalAnswers);
+      const result = await completeOnboarding(
+        finalAnswers,
+        detectBrowserTimezone(),
+      );
 
       setIsSaving(false);
 

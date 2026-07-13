@@ -4,6 +4,7 @@ import {
   resolveCoachStyle,
 } from "@/lib/ai/agent-prompt";
 import { mergeEmotionScores } from "@/lib/ai/emotion-scores";
+import { mapOpenAiError } from "@/lib/ai/openai-errors";
 import { analyzeEntrySentiment } from "@/lib/ai/twinword";
 import { getProfile } from "@/lib/auth/get-profile";
 import { buildEntryThreadContext } from "@/lib/entries/entry-thread";
@@ -64,6 +65,22 @@ interface RawAnalysis {
   themes?: EntryAnalysisData["themes"];
 }
 
+function validateParsedAnalysis(parsed: RawAnalysis): string | null {
+  if (!parsed.title?.trim()) {
+    return "AI-analyse mist een titel.";
+  }
+
+  if (!parsed.reflection_text?.trim()) {
+    return "AI-analyse mist een reflectietekst.";
+  }
+
+  if (!parsed.summary?.trim() && !parsed.key_insight?.trim()) {
+    return "AI-analyse mist een samenvatting of kerninzicht.";
+  }
+
+  return null;
+}
+
 export async function analyzeEntry(
   entryId: string,
 ): Promise<EntryAnalysisData | { error: string }> {
@@ -89,20 +106,26 @@ export async function analyzeEntry(
   const profile = await getProfile();
   const coachStyle = resolveCoachStyle(profile.ai_persona_preference);
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: ANALYSIS_PROMPT(getCoachStyleInstruction(coachStyle)),
-      },
-      {
-        role: "user",
-        content: `Analyseer deze entry:\n\n${thread}`,
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
+  let completion: OpenAI.Chat.Completions.ChatCompletion;
+
+  try {
+    completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: ANALYSIS_PROMPT(getCoachStyleInstruction(coachStyle)),
+        },
+        {
+          role: "user",
+          content: `Analyseer deze entry:\n\n${thread}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+  } catch (error) {
+    return { error: mapOpenAiError(error, "analysis") };
+  }
 
   const raw = completion.choices[0]?.message?.content;
 
@@ -118,6 +141,12 @@ export async function analyzeEntry(
     return { error: "AI-analyse kon niet worden verwerkt." };
   }
 
+  const validationError = validateParsedAnalysis(parsed);
+
+  if (validationError) {
+    return { error: validationError };
+  }
+
   const feelings = parsed.feelings ?? [];
   const englishText = parsed.english_plain_text?.trim() || userText;
   const sentiment = await analyzeEntrySentiment(englishText, {
@@ -128,11 +157,16 @@ export async function analyzeEntry(
     feelings,
   );
 
+  const title = parsed.title?.trim() ?? "";
+  const reflectionText = parsed.reflection_text?.trim() ?? "";
+  const summary = parsed.summary?.trim() || "";
+  const keyInsight = parsed.key_insight?.trim() || "";
+
   return {
-    title: parsed.title?.trim() || "Reflectie",
-    summary: parsed.summary?.trim() || "",
-    reflection_text: parsed.reflection_text?.trim() || "",
-    key_insight: parsed.key_insight?.trim() || "",
+    title,
+    summary,
+    reflection_text: reflectionText,
+    key_insight: keyInsight,
     feelings,
     persons: parsed.persons ?? [],
     themes: normalizeEntryThemes(parsed.themes),

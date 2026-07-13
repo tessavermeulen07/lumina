@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isBuiltinGoalCategory } from "@/lib/goals/category-labels";
+import { getInitialGoalWindow } from "@/lib/habits/goal-window";
 import { listCustomGoalCategories } from "@/lib/habits/list-goal-categories";
 import { getAuthenticatedUser } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,7 @@ export async function saveGoal(input: SaveGoalInput): Promise<SaveGoalResult> {
   }
 
   const supabase = await createClient();
+  const window = getInitialGoalWindow(input.frequency);
 
   const { data, error } = await supabase
     .from("habits_and_intentions")
@@ -54,6 +56,8 @@ export async function saveGoal(input: SaveGoalInput): Promise<SaveGoalResult> {
       frequency: input.frequency,
       category: input.category,
       type: "intention",
+      window_start_date: window.startDate,
+      window_end_date: window.endDate,
     })
     .select("id")
     .single();

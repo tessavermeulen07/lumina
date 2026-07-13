@@ -127,6 +127,8 @@ export function EntryDetailModal({
                 <JournalFlow
                   aiError={null}
                   aiLoadingAfterBlockId={null}
+                  aiStatus="idle"
+                  aiStatusMessage={null}
                   blocks={blocks}
                   focusBlockId={null}
                   isAiLoading={false}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types/database";
+import { resolveTimezone } from "@/lib/utils/user-timezone";
 
 export async function getAuthenticatedUser() {
   const supabase = await createClient();
@@ -31,6 +32,9 @@ export async function getProfile(): Promise<Profile & { email: string | undefine
 
   return {
     ...profile,
+    timezone: resolveTimezone(
+      (profile as { timezone?: string | null }).timezone,
+    ),
     email: user.email,
   };
 }

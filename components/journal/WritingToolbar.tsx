@@ -53,6 +53,7 @@ interface WritingToolbarProps {
   isFinalizing: boolean;
   draftStatus: DraftStatus;
   draftError: string | null;
+  finalizeError: string | null;
   isBookmarked: boolean;
   isPrivate: boolean;
 }
@@ -118,10 +119,15 @@ const formatItems = [
 function getStatusMessage(
   draftStatus: DraftStatus,
   draftError: string | null,
+  finalizeError: string | null,
   isFinalizing: boolean,
 ): string | null {
   if (isFinalizing) {
     return "Analyse wordt gemaakt…";
+  }
+
+  if (finalizeError) {
+    return finalizeError;
   }
 
   if (draftStatus === "saving") {
@@ -151,6 +157,7 @@ export function WritingToolbar({
   isFinalizing,
   draftStatus,
   draftError,
+  finalizeError,
   isBookmarked,
   isPrivate,
 }: Readonly<WritingToolbarProps>) {
@@ -174,7 +181,13 @@ export function WritingToolbar({
 
   if (!visible) return null;
 
-  const statusMessage = getStatusMessage(draftStatus, draftError, isFinalizing);
+  const statusMessage = getStatusMessage(
+    draftStatus,
+    draftError,
+    finalizeError,
+    isFinalizing,
+  );
+  const hasError = draftStatus === "error" || Boolean(finalizeError);
 
   return (
     <div className="mt-8 pb-12">
@@ -183,7 +196,7 @@ export function WritingToolbar({
           <p
             aria-live="polite"
             className={`mb-3 text-center text-sm ${
-              draftStatus === "error" ? "text-red-600" : "text-muted"
+              hasError ? "text-red-600" : "text-muted"
             }`}
           >
             {statusMessage}

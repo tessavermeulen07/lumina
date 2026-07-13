@@ -4,6 +4,7 @@ import {
   buildUserMessage,
   type InteractionMode,
 } from "@/lib/ai/agent-prompt";
+import { mapOpenAiError } from "@/lib/ai/openai-errors";
 import type { ToolbarAiAction } from "@/lib/ai/question-context";
 import {
   executeLuminaTool,
@@ -41,91 +42,97 @@ function extractInsightId(toolResult: string): string | undefined {
 export async function runLuminaAgent(
   input: AgentInput,
 ): Promise<AgentResult | { error: string }> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!apiKey) {
-    return { error: "AI is tijdelijk niet beschikbaar." };
-  }
+    if (!apiKey) {
+      return {
+        error: "Lumina is tijdelijk niet beschikbaar. Je kunt wel gewoon doorgaan met schrijven.",
+      };
+    }
 
-  const openai = new OpenAI({ apiKey });
-  const systemPrompt = buildSystemPrompt({
-    interactionMode: input.interactionMode,
-    coachStyle: input.coachStyle,
-    onboardingContext: input.onboardingContext,
-    toolbarAction: input.toolbarAction,
-  });
-
-  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt },
-    {
-      role: "user",
-      content: buildUserMessage({
-        userQuestion: input.userQuestion,
-        interactionMode: input.interactionMode,
-        actionLabel: input.actionLabel,
-        toolbarAction: input.toolbarAction,
-        entryContent: input.entryContent,
-        entryThreadContext: input.entryThreadContext,
-      }),
-    },
-  ];
-
-  let insightId: string | undefined;
-  const maxRounds = 5;
-
-  for (let round = 0; round < maxRounds; round += 1) {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      tools: luminaToolDefinitions,
-      tool_choice: "auto",
+    const openai = new OpenAI({ apiKey });
+    const systemPrompt = buildSystemPrompt({
+      interactionMode: input.interactionMode,
+      coachStyle: input.coachStyle,
+      onboardingContext: input.onboardingContext,
+      toolbarAction: input.toolbarAction,
     });
 
-    const choice = completion.choices[0]?.message;
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: buildUserMessage({
+          userQuestion: input.userQuestion,
+          interactionMode: input.interactionMode,
+          actionLabel: input.actionLabel,
+          toolbarAction: input.toolbarAction,
+          entryContent: input.entryContent,
+          entryThreadContext: input.entryThreadContext,
+        }),
+      },
+    ];
 
-    if (!choice) {
-      return { error: "AI gaf geen antwoord." };
-    }
+    let insightId: string | undefined;
+    const maxRounds = 5;
 
-    if (choice.tool_calls?.length) {
-      messages.push(choice);
+    for (let round = 0; round < maxRounds; round += 1) {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        tools: luminaToolDefinitions,
+        tool_choice: "auto",
+      });
 
-      for (const toolCall of choice.tool_calls) {
-        if (toolCall.type !== "function") continue;
+      const choice = completion.choices[0]?.message;
 
-        const args = JSON.parse(toolCall.function.arguments) as Record<
-          string,
-          unknown
-        >;
-
-        const result = await executeLuminaTool(
-          toolCall.function.name,
-          args,
-          { userId: input.userId, defaultEntryId: input.entryId },
-        );
-
-        if (toolCall.function.name === "save_ai_insight") {
-          insightId = extractInsightId(result) ?? insightId;
-        }
-
-        messages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: result,
-        });
+      if (!choice) {
+        return { error: "AI gaf geen antwoord." };
       }
 
-      continue;
+      if (choice.tool_calls?.length) {
+        messages.push(choice);
+
+        for (const toolCall of choice.tool_calls) {
+          if (toolCall.type !== "function") continue;
+
+          const args = JSON.parse(toolCall.function.arguments) as Record<
+            string,
+            unknown
+          >;
+
+          const result = await executeLuminaTool(
+            toolCall.function.name,
+            args,
+            { userId: input.userId, defaultEntryId: input.entryId },
+          );
+
+          if (toolCall.function.name === "save_ai_insight") {
+            insightId = extractInsightId(result) ?? insightId;
+          }
+
+          messages.push({
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: result,
+          });
+        }
+
+        continue;
+      }
+
+      const answer = choice.content?.trim();
+
+      if (!answer) {
+        return { error: "AI gaf geen antwoord." };
+      }
+
+      return { answer, insightId };
     }
 
-    const answer = choice.content?.trim();
-
-    if (!answer) {
-      return { error: "AI gaf geen antwoord." };
-    }
-
-    return { answer, insightId };
+    return { error: "AI kon de vraag niet volledig verwerken." };
+  } catch (error) {
+    return { error: mapOpenAiError(error, "agent") };
   }
-
-  return { error: "AI kon de vraag niet volledig verwerken." };
 }

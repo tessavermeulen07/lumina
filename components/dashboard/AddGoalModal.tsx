@@ -8,7 +8,6 @@ import { builtinGoalCategories } from "@/lib/goals/category-labels";
 import {
   defaultGoalCategory,
   goalFrequencyOptions,
-  type Goal,
   type GoalCategoryOption,
   type GoalFrequency,
 } from "@/lib/types/goal";
@@ -22,7 +21,12 @@ interface AddGoalModalProps {
   isOpen: boolean;
   categories: GoalCategoryOption[];
   onClose: () => void;
-  onAdd: (goal: Omit<Goal, "id" | "categoryLabel">) => void;
+  onAdd: (goal: {
+    name: string;
+    category: string;
+    frequency: GoalFrequency;
+    description: string;
+  }) => void;
 }
 
 const emptyForm: {

@@ -15,6 +15,8 @@ import type { GoalFrequency } from "@/lib/types/goal";
 export type HabitType = "habit" | "intention";
 
 export type HabitLogStatus = "completed" | "skipped" | "failed";
+export type CheckinQueueStatus = "pending" | "completed" | "skipped";
+export type CheckinPopupType = "goals" | "ochtend_reflectie" | "avond_reflectie";
 
 export type ReflectionPeriod = "ochtend" | "avond";
 
@@ -22,6 +24,10 @@ export interface Profile {
   id: string;
   username: string;
   ai_persona_preference: AiCoachStyle | null;
+  timezone: string;
+  goals_checkin_time: string;
+  morning_reflection_time: string;
+  evening_reflection_time: string;
   onboarding_main_goal: OnboardingMainGoal | null;
   onboarding_priorities: OnboardingPriority[];
   onboarding_experience: JournalExperience | null;
@@ -95,6 +101,8 @@ export interface HabitAndIntention {
   category: string;
   frequency: GoalFrequency;
   is_active: boolean;
+  window_start_date: string;
+  window_end_date: string;
   created_at: string;
 }
 
@@ -111,6 +119,26 @@ export interface HabitLog {
   status: HabitLogStatus;
   ai_checkin_prompt: string | null;
   logged_at: string;
+}
+
+export interface IntentionCheckinQueueItem {
+  id: string;
+  user_id: string;
+  intention_id: string;
+  due_for_date: string;
+  status: CheckinQueueStatus;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface CheckinPopupState {
+  id: string;
+  user_id: string;
+  popup_type: CheckinPopupType;
+  popup_date: string;
+  shown_at: string;
+  dismissed_at: string | null;
+  completed_at: string | null;
 }
 
 export interface AiInsightPatterns {
@@ -250,6 +278,26 @@ export interface Database {
           logged_at?: string;
         };
         Update: Partial<Omit<HabitLog, "id" | "habit_id">>;
+      };
+      intention_checkin_queue: {
+        Row: IntentionCheckinQueueItem;
+        Insert: Omit<IntentionCheckinQueueItem, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<
+          Omit<IntentionCheckinQueueItem, "id" | "user_id" | "intention_id">
+        >;
+      };
+      checkin_popup_state: {
+        Row: CheckinPopupState;
+        Insert: Omit<CheckinPopupState, "id" | "shown_at"> & {
+          id?: string;
+          shown_at?: string;
+        };
+        Update: Partial<
+          Omit<CheckinPopupState, "id" | "user_id" | "popup_type" | "popup_date">
+        >;
       };
       ai_insights: {
         Row: AiInsight;

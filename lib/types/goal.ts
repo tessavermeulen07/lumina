@@ -13,11 +13,14 @@ export type BuiltinGoalCategory =
 
 export interface Goal {
   id: string;
+  queueItemId?: string;
   name: string;
   category: string;
   categoryLabel: string;
   frequency: GoalFrequency;
   description: string;
+  windowStartDate: string;
+  windowEndDate: string;
 }
 
 export interface GoalCategoryOption {

@@ -37,7 +37,12 @@ import type { EntryAnalysis, ReflectionPeriod } from "@/lib/types/database";
 const AUTO_SAVE_DELAY_MS = 1500;
 const SAVED_STATUS_RESET_MS = 2000;
 
+function formatFinalizeError(message: string): string {
+  return `${message} Je tekst is als concept bewaard — probeer opnieuw op te slaan.`;
+}
+
 type DraftStatus = "idle" | "saving" | "saved" | "error";
+type AiStatus = "idle" | "loading" | "success" | "unavailable";
 
 interface WritingAreaProps {
   hint: string;
@@ -78,6 +83,7 @@ function WritingAreaContent({
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>("idle");
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [reviewAnalysis, setReviewAnalysis] = useState<EntryAnalysis | null>(
     null,
@@ -93,6 +99,8 @@ function WritingAreaContent({
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+  const [aiStatusMessage, setAiStatusMessage] = useState<string | null>(null);
   const [aiLoadingAfterBlockId, setAiLoadingAfterBlockId] = useState<
     string | null
   >(null);
@@ -110,6 +118,7 @@ function WritingAreaContent({
   const reflectionPromptIdRef = useRef(reflectionPromptId);
   const goalIdRef = useRef(resolvedGoalId);
   const goalPromptRef = useRef(resolvedGoalPrompt);
+  const aiSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     reflectionPeriodRef.current = reflectionPeriod;
@@ -146,6 +155,10 @@ function WritingAreaContent({
 
       for (const timeout of saveTimeoutsRef.current.values()) {
         clearTimeout(timeout);
+      }
+
+      if (aiSuccessTimeoutRef.current) {
+        clearTimeout(aiSuccessTimeoutRef.current);
       }
     };
   }, []);
@@ -310,7 +323,7 @@ function WritingAreaContent({
 
   async function handleFinalize() {
     setIsFinalizing(true);
-    setDraftError(null);
+    setFinalizeError(null);
 
     await flushPendingSaves();
 
@@ -326,11 +339,11 @@ function WritingAreaContent({
     setIsFinalizing(false);
 
     if ("error" in result) {
-      setDraftStatus("error");
-      setDraftError(result.error);
+      setFinalizeError(formatFinalizeError(result.error));
       return;
     }
 
+    setFinalizeError(null);
     setReviewAnalysis(result.analysis);
   }
 
@@ -444,15 +457,23 @@ function WritingAreaContent({
   }
 
   async function handleAiAction(actionLabel: string) {
+    if (isAiLoading) {
+      return;
+    }
+
     const activeBlock = getActiveUserBlock(blocks);
     const activeContent = activeBlock?.content.trim() ?? "";
 
     if (isRichTextEmpty(activeContent)) {
       setAiError("Schrijf eerst iets voordat je AI gebruikt.");
+      setAiStatus("idle");
+      setAiStatusMessage(null);
       return;
     }
 
     setIsAiLoading(true);
+    setAiStatus("loading");
+    setAiStatusMessage("Bezig met je AI-actie…");
     setAiError(null);
     setAiLoadingAfterBlockId(activeBlock?.id ?? null);
 
@@ -468,18 +489,32 @@ function WritingAreaContent({
     });
 
     setIsAiLoading(false);
-    setAiLoadingAfterBlockId(null);
 
     if ("error" in result) {
       setAiError(result.error);
+      setAiStatus("unavailable");
+      setAiStatusMessage(result.error);
       return;
+    }
+
+    if (aiSuccessTimeoutRef.current) {
+      clearTimeout(aiSuccessTimeoutRef.current);
     }
 
     entryIdRef.current = result.entryId;
     setEntryId(result.entryId);
     setBlocks(result.blocks);
     setFocusBlockId(result.focusBlockId);
+    setAiLoadingAfterBlockId(result.focusBlockId);
+    setAiStatus("success");
+    setAiStatusMessage("Gelukt. Je kunt meteen verder schrijven.");
     setAiError(null);
+
+    aiSuccessTimeoutRef.current = setTimeout(() => {
+      setAiStatus("idle");
+      setAiStatusMessage(null);
+      setAiLoadingAfterBlockId(null);
+    }, 2500);
 
     for (const block of result.blocks) {
       if (block.type === "user") {
@@ -502,6 +537,8 @@ function WritingAreaContent({
         <JournalFlow
           aiError={aiError}
           aiLoadingAfterBlockId={aiLoadingAfterBlockId}
+          aiStatus={aiStatus}
+          aiStatusMessage={aiStatusMessage}
           blocks={blocks}
           focusBlockId={focusBlockId}
           isAiLoading={isAiLoading}
@@ -512,6 +549,7 @@ function WritingAreaContent({
           canSave={canSave}
           draftError={draftError}
           draftStatus={draftStatus}
+          finalizeError={finalizeError}
           isBookmarked={isBookmarked}
           isFinalizing={isFinalizing}
           isPrivate={isPrivate}

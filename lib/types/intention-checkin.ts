@@ -2,6 +2,7 @@ import type { GoalFrequency } from "@/lib/types/goal";
 
 export interface GoalCheckInData {
   id: string;
+  queueItemId?: string;
   name: string;
   categoryLabel: string;
   frequency: GoalFrequency;
