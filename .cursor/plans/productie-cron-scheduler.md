@@ -21,31 +21,35 @@ isProject: false
 
 ## Context
 
-De scheduler vult uurlijks de in-app check-in inbox (`intention_checkin_queue`), per gebruiker op basis van `profiles.timezone`. Gebruikers zien daardoor open doelen op **Vandaag** — zonder push of e-mail.
+De scheduler vult de in-app check-in inbox (`intention_checkin_queue`), per gebruiker op basis van `profiles.timezone`. Gebruikers zien daardoor open doelen op **Vandaag** — zonder push of e-mail.
 
 ```mermaid
 flowchart LR
   subgraph prod [Productie]
-    VercelCron["Vercel Cron elk uur"]
+    VercelCron["Vercel Cron dagelijks 05:00 UTC"]
+    AppVisit["App-paginabezoek"]
     CronRoute["GET /api/cron/check-ins"]
+    EnsureDue["ensureDueCheckins"]
     Scheduler[scheduleDueCheckinsForToday]
     AdminClient[createAdminClient]
     DB[(Supabase)]
   end
   VercelCron -->|"Authorization: Bearer CRON_SECRET"| CronRoute
+  AppVisit --> EnsureDue
   CronRoute --> Scheduler
+  EnsureDue --> Scheduler
   Scheduler --> AdminClient
   AdminClient --> DB
 ```
 
-**Belangrijk verschil dev vs productie:**
+**Hybrid scheduling (Vercel Hobby):**
 
-| Omgeving | Scheduler-trigger |
-|----------|-------------------|
-| Development | [`ensureDueCheckins`](../../lib/habits/ensure-due-checkins.ts) bij elk app-paginabezoek (alleen `NODE_ENV === "development"`) |
-| Productie | Alleen Vercel cron via [`vercel.json`](../../vercel.json) → [`app/api/cron/check-ins/route.ts`](../../app/api/cron/check-ins/route.ts) |
+| Trigger | Wanneer |
+|---------|---------|
+| [`ensureDueCheckins`](../../lib/habits/ensure-due-checkins.ts) | Bij elk app-paginabezoek (dev + productie) |
+| Vercel cron via [`vercel.json`](../../vercel.json) | Dagelijks 05:00 UTC — vangnet voor inactieve gebruikers |
 
-In productie is er **geen fallback** als de cron faalt.
+Uurlijkse cron vereist Vercel Pro; timezone-awareness voor actieve gebruikers loopt via `ensureDueCheckins`.
 
 **Bugfix (middleware):** `/api/cron/*` moet publiek bereikbaar zijn (auth via `CRON_SECRET`, niet via sessie). Zie [`middleware.ts`](../../middleware.ts).
 
