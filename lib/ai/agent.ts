@@ -1,4 +1,5 @@
-import OpenAI from "openai";
+import { generateText, stepCountIs, APICallError } from "ai";
+import { openai } from "@ai-sdk/openai";
 import {
   buildSystemPrompt,
   buildUserMessage,
@@ -6,10 +7,7 @@ import {
 } from "@/lib/ai/agent-prompt";
 import { mapOpenAiError } from "@/lib/ai/openai-errors";
 import type { ToolbarAiAction } from "@/lib/ai/question-context";
-import {
-  executeLuminaTool,
-  luminaToolDefinitions,
-} from "@/lib/ai/tools";
+import { createLuminaTools } from "@/lib/ai/tools";
 import type { AiCoachStyle } from "@/lib/types/onboarding";
 
 export interface AgentInput {
@@ -30,28 +28,29 @@ export interface AgentResult {
   insightId?: string;
 }
 
-function extractInsightId(toolResult: string): string | undefined {
-  try {
-    const parsed = JSON.parse(toolResult) as { id?: string };
-    return parsed.id;
-  } catch {
+function extractInsightId(output: unknown): string | undefined {
+  if (!output || typeof output !== "object") {
     return undefined;
   }
+
+  if ("id" in output && typeof output.id === "string") {
+    return output.id;
+  }
+
+  return undefined;
 }
 
 export async function runLuminaAgent(
   input: AgentInput,
 ): Promise<AgentResult | { error: string }> {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
+    if (!process.env.OPENAI_API_KEY) {
       return {
-        error: "Lumina is tijdelijk niet beschikbaar. Je kunt wel gewoon doorgaan met schrijven.",
+        error:
+          "Lumina is tijdelijk niet beschikbaar. Je kunt wel gewoon doorgaan met schrijven.",
       };
     }
 
-    const openai = new OpenAI({ apiKey });
     const systemPrompt = buildSystemPrompt({
       interactionMode: input.interactionMode,
       coachStyle: input.coachStyle,
@@ -59,80 +58,53 @@ export async function runLuminaAgent(
       toolbarAction: input.toolbarAction,
     });
 
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: buildUserMessage({
-          userQuestion: input.userQuestion,
-          interactionMode: input.interactionMode,
-          actionLabel: input.actionLabel,
-          toolbarAction: input.toolbarAction,
-          entryContent: input.entryContent,
-          entryThreadContext: input.entryThreadContext,
-        }),
-      },
-    ];
+    const userMessage = buildUserMessage({
+      userQuestion: input.userQuestion,
+      interactionMode: input.interactionMode,
+      actionLabel: input.actionLabel,
+      toolbarAction: input.toolbarAction,
+      entryContent: input.entryContent,
+      entryThreadContext: input.entryThreadContext,
+    });
 
     let insightId: string | undefined;
-    const maxRounds = 5;
 
-    for (let round = 0; round < maxRounds; round += 1) {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages,
-        tools: luminaToolDefinitions,
-        tool_choice: "auto",
-      });
-
-      const choice = completion.choices[0]?.message;
-
-      if (!choice) {
-        return { error: "AI gaf geen antwoord." };
-      }
-
-      if (choice.tool_calls?.length) {
-        messages.push(choice);
-
-        for (const toolCall of choice.tool_calls) {
-          if (toolCall.type !== "function") continue;
-
-          const args = JSON.parse(toolCall.function.arguments) as Record<
-            string,
-            unknown
-          >;
-
-          const result = await executeLuminaTool(
-            toolCall.function.name,
-            args,
-            { userId: input.userId, defaultEntryId: input.entryId },
-          );
-
-          if (toolCall.function.name === "save_ai_insight") {
-            insightId = extractInsightId(result) ?? insightId;
+    const result = await generateText({
+      model: openai("gpt-4o-mini"),
+      system: systemPrompt,
+      prompt: userMessage,
+      tools: createLuminaTools({
+        userId: input.userId,
+        defaultEntryId: input.entryId,
+      }),
+      stopWhen: stepCountIs(5),
+      onStepFinish({ toolResults }) {
+        for (const toolResult of toolResults) {
+          if (toolResult.toolName !== "save_ai_insight") {
+            continue;
           }
 
-          messages.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: result,
-          });
+          insightId =
+            extractInsightId(toolResult.output) ?? insightId;
         }
+      },
+    });
 
-        continue;
-      }
+    const answer = result.text.trim();
 
-      const answer = choice.content?.trim();
-
-      if (!answer) {
-        return { error: "AI gaf geen antwoord." };
-      }
-
-      return { answer, insightId };
+    if (!answer) {
+      return { error: "AI gaf geen antwoord." };
     }
 
-    return { error: "AI kon de vraag niet volledig verwerken." };
+    return { answer, insightId };
   } catch (error) {
+    if (APICallError.isInstance(error) && error.statusCode === 429) {
+      return {
+        error:
+          "Lumina is tijdelijk niet beschikbaar door drukte. Probeer het zo opnieuw.",
+      };
+    }
+
     return { error: mapOpenAiError(error, "agent") };
   }
 }
