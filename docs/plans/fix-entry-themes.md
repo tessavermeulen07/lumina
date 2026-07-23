@@ -18,7 +18,7 @@ isProject: true
 
 ## Probleem
 
-De AI krijgt een ongeldig themes-schema in `lib/ai/analyze-entry.ts`: de beschrijving staat als object-key, zonder `"name"`. Het model antwoordt daardoor vaak met `{ "theme": "Werk" }`.
+De AI krijgt een ongeldig themes-schema in `src/lib/ai/analyze-entry.ts`: de beschrijving staat als object-key, zonder `"name"`. Het model antwoordt daardoor vaak met `{ "theme": "Werk" }`.
 
 `getEntryThemeLabel` zoekt alleen `name`; bij ontbreken neemt die de **eerste key** (`"theme"`) in plaats van de waarde (`"Werk"`). Die verkeerde label wordt opgeslagen en overal getoond (analyse-review, inzichten, weekly report).
 
@@ -30,5 +30,5 @@ De AI krijgt een ongeldig themes-schema in `lib/ai/analyze-entry.ts`: de beschri
 
 ## Scope
 
-- `lib/ai/analyze-entry.ts` en `lib/types/entry-analysis.ts`
+- `src/lib/ai/analyze-entry.ts` en `src/types/entry-analysis.ts`
 - Geen DB-migratie: bestaande analyses worden bij weergave al goed gelezen

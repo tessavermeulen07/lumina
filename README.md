@@ -95,6 +95,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Project structure
+
+```
+src/
+  app/              # Next.js routes and API
+  components/
+    ui/             # Reusable primitives
+    layout/         # Shell, nav, providers
+    features/       # Domain-specific UI
+  hooks/            # Custom React hooks
+  lib/              # Business logic and utilities
+  types/            # TypeScript types
+docs/               # Project brief, decisions, plans
+supabase/           # Database migrations
+public/             # Static assets
+```
+
 Available scripts
 
 

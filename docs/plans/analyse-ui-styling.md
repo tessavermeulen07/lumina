@@ -19,10 +19,10 @@ isProject: false
 
 # Analyse- en geschiedenis-UI styling
 
-Zie `.cursor/plans/analyse_ui_styling_b66f8085.plan.md` voor volledige specificatie.
+Zie dit document voor de volledige specificatie.
 
 ## Samenvatting
 
-- **EntryAnalysisContent**: `Kerninzicht` → Inzicht; witte tags voor gevoelens/personen/thema's; optionele `frameReflection` prop voor geschiedenis-modal
-- **EntryDetailModal**: compacte datum rechts op Invoer-tab (`DI 16 JUN · 14:32`); Analyse-tab met `frameReflection`
-- **JournalFlow**: Lumina-blokken tonen actielabel rechts (Vraag, Ga dieper, …), geen tijdstempel meer
+- **EntryAnalysisContent** (`src/components/features/history/EntryAnalysisContent.tsx`): `Kerninzicht` → Inzicht; witte tags voor gevoelens/personen/thema's; optionele `frameReflection` prop voor geschiedenis-modal
+- **EntryDetailModal** (`src/components/features/history/EntryDetailModal.tsx`): compacte datum rechts op Invoer-tab (`DI 16 JUN · 14:32`); Analyse-tab met `frameReflection`
+- **JournalFlow** (`src/components/features/journal/JournalFlow.tsx`): Lumina-blokken tonen actielabel rechts (Vraag, Ga dieper, …), geen tijdstempel meer
