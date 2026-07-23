@@ -12,6 +12,7 @@ import {
   priorityOptions,
   USER_NAME_KEY,
 } from "@/lib/constants/onboarding";
+import { useCompleteOnboarding } from "@/lib/queries/use-profile";
 import type {
   AiCoachStyle,
   JournalExperience,
@@ -38,10 +39,10 @@ export function OnboardingWizard({
   compact = false,
 }: Readonly<OnboardingWizardProps>) {
   const router = useRouter();
+  const completeOnboarding = useCompleteOnboarding();
   const [step, setStep] = useState(1);
   const [userName, setUserName] = useState(userNameProp ?? "daar");
   const [answers, setAnswers] = useState<OnboardingAnswers>(emptyAnswers);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,33 +79,25 @@ export function OnboardingWizard({
     setStep(4);
   }
 
-  function handleCoachSelect(coachStyle: AiCoachStyle) {
+  async function handleCoachSelect(coachStyle: AiCoachStyle) {
     const finalAnswers: OnboardingAnswers = { ...answers, coachStyle };
     sessionStorage.setItem(ONBOARDING_ANSWERS_KEY, JSON.stringify(finalAnswers));
+    setSaveError(null);
 
-    void (async () => {
-      setIsSaving(true);
-      setSaveError(null);
+    const result = await completeOnboarding.mutateAsync({
+      answers: finalAnswers,
+      timezone: detectBrowserTimezone(),
+    });
 
-      const { completeOnboarding } = await import(
-        "@/lib/profile/complete-onboarding"
-      );
-      const result = await completeOnboarding(
-        finalAnswers,
-        detectBrowserTimezone(),
-      );
+    if ("error" in result) {
+      setSaveError(result.error);
+      return;
+    }
 
-      setIsSaving(false);
-
-      if ("error" in result) {
-        setSaveError(result.error);
-        return;
-      }
-
-      router.push("/schrijf?prompt=first_entry");
-    })();
+    router.push("/schrijf?prompt=first_entry");
   }
 
+  const isSaving = completeOnboarding.isPending;
   const optionListClass = "flex flex-col gap-3";
   const wrapperClass = compact ? "w-full" : "mx-auto w-full max-w-3xl px-6 py-10";
 
@@ -196,7 +189,9 @@ export function OnboardingWizard({
                 isSelected={answers.coachStyle === option.id}
                 key={option.id}
                 label={option.label}
-                onClick={() => handleCoachSelect(option.id)}
+                onClick={() => {
+                  void handleCoachSelect(option.id);
+                }}
               />
             ))}
           </div>

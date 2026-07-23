@@ -1,22 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { AddGoalModal } from "@/components/dashboard/AddGoalModal";
 import { Button } from "@/components/ui/Button";
-import { deleteIntention } from "@/lib/habits/delete-intention";
-import { logIntentionCheckin } from "@/lib/habits/log-intention-checkin";
-import { saveGoal } from "@/lib/habits/save-intention";
-import {
-  getFrequencyLabel,
-  type Goal,
-  type GoalCategoryOption,
-} from "@/lib/types/goal";
-
-interface GoalsSectionProps {
-  initialGoals: Goal[];
-  categories: GoalCategoryOption[];
-}
+import { useGoalMutations, useGoals } from "@/lib/queries/use-goals";
+import { getFrequencyLabel } from "@/lib/types/goal";
 
 function formatDutchDate(dateString: string): string {
   return new Intl.DateTimeFormat("nl-NL", {
@@ -26,19 +14,11 @@ function formatDutchDate(dateString: string): string {
   }).format(new Date(dateString));
 }
 
-export function GoalsSection({
-  initialGoals,
-  categories,
-}: Readonly<GoalsSectionProps>) {
-  const router = useRouter();
+export function GoalsSection() {
+  const { data: goals = [], isLoading, isError } = useGoals();
+  const { createGoal, removeGoal, logGoalCheckin, isPending } = useGoalMutations();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [goals, setGoals] = useState(initialGoals);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setGoals(initialGoals);
-  }, [initialGoals]);
 
   useEffect(() => {
     if (window.location.hash !== "#doelen") {
@@ -52,10 +32,10 @@ export function GoalsSection({
   }, []);
 
   async function handleAdd(
-    goal: Omit<Goal, "id" | "categoryLabel" | "windowStartDate" | "windowEndDate">,
+    goal: Parameters<typeof createGoal.mutateAsync>[0],
   ) {
     setError(null);
-    const result = await saveGoal(goal);
+    const result = await createGoal.mutateAsync(goal);
 
     if ("error" in result) {
       setError(result.error);
@@ -63,24 +43,15 @@ export function GoalsSection({
     }
 
     setIsModalOpen(false);
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   async function handleDelete(id: string) {
     setError(null);
-    const result = await deleteIntention(id);
+    const result = await removeGoal.mutateAsync(id);
 
     if ("error" in result) {
       setError(result.error);
-      return;
     }
-
-    setGoals((current) => current.filter((goal) => goal.id !== id));
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   async function handleGoalCheckin(
@@ -89,7 +60,7 @@ export function GoalsSection({
     queueItemId?: string,
   ) {
     setError(null);
-    const result = await logIntentionCheckin({
+    const result = await logGoalCheckin.mutateAsync({
       habitId: goalId,
       queueItemId,
       status,
@@ -97,13 +68,7 @@ export function GoalsSection({
 
     if ("error" in result) {
       setError(result.error);
-      return;
     }
-
-    setGoals((current) => current.filter((goal) => goal.id !== goalId));
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   return (
@@ -148,7 +113,13 @@ export function GoalsSection({
             </p>
           ) : null}
 
-          {goals.length === 0 ? (
+          {isError ? (
+            <p className="mt-6 text-sm text-red-600" role="alert">
+              Doelen konden niet worden geladen.
+            </p>
+          ) : isLoading ? (
+            <p className="mt-6 text-sm text-muted">Doelen laden…</p>
+          ) : goals.length === 0 ? (
             <p className="mt-6 text-sm text-muted">Voeg een doel toe.</p>
           ) : (
             <ul className="mt-6 space-y-3">
@@ -224,7 +195,6 @@ export function GoalsSection({
       </section>
 
       <AddGoalModal
-        categories={categories}
         isOpen={isModalOpen}
         onAdd={(goal) => {
           void handleAdd(goal);

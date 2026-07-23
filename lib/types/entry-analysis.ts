@@ -14,6 +14,14 @@ export interface EntryTheme {
   name: string;
 }
 
+const THEME_LABEL_ALIASES = ["name", "theme", "thema", "label"] as const;
+
+const PLACEHOLDER_THEME_LABELS = new Set(["thema", "theme"]);
+
+function isPlaceholderThemeLabel(label: string): boolean {
+  return PLACEHOLDER_THEME_LABELS.has(label.toLowerCase());
+}
+
 export function getEntryThemeLabel(theme: EntryTheme | string | unknown): string {
   if (typeof theme === "string") {
     return theme.trim();
@@ -22,14 +30,18 @@ export function getEntryThemeLabel(theme: EntryTheme | string | unknown): string
   if (theme && typeof theme === "object") {
     const record = theme as Record<string, unknown>;
 
-    if (typeof record.name === "string" && record.name.trim()) {
-      return record.name.trim();
+    for (const key of THEME_LABEL_ALIASES) {
+      const value = record[key];
+
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
     }
 
-    const firstKey = Object.keys(record)[0];
-
-    if (firstKey) {
-      return firstKey.trim();
+    for (const value of Object.values(record)) {
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
     }
   }
 
@@ -46,7 +58,7 @@ export function normalizeEntryThemes(themes: unknown): EntryTheme[] {
   for (const theme of themes) {
     const label = getEntryThemeLabel(theme);
 
-    if (label && label !== "Thema") {
+    if (label && !isPlaceholderThemeLabel(label)) {
       normalized.push({ name: label });
     }
   }

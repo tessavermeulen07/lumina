@@ -1,14 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { saveGoalCategory } from "@/lib/habits/save-goal-category";
 import { builtinGoalCategories } from "@/lib/goals/category-labels";
+import {
+  useGoalCategoryOptions,
+  useGoalMutations,
+} from "@/lib/queries/use-goals";
 import {
   defaultGoalCategory,
   goalFrequencyOptions,
-  type GoalCategoryOption,
   type GoalFrequency,
 } from "@/lib/types/goal";
 
@@ -19,7 +20,6 @@ const fieldClassName =
 
 interface AddGoalModalProps {
   isOpen: boolean;
-  categories: GoalCategoryOption[];
   onClose: () => void;
   onAdd: (goal: {
     name: string;
@@ -45,17 +45,16 @@ const emptyForm: {
 
 export function AddGoalModal({
   isOpen,
-  categories,
   onClose,
   onAdd,
 }: Readonly<AddGoalModalProps>) {
-  const router = useRouter();
+  const { data: categories = [] } = useGoalCategoryOptions();
+  const { createGoalCategory } = useGoalMutations();
   const titleId = useId();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(emptyForm);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   const handleClose = useCallback(() => {
     setForm(emptyForm);
@@ -97,9 +96,7 @@ export function AddGoalModal({
         return;
       }
 
-      setIsSavingCategory(true);
-      const result = await saveGoalCategory(trimmedCategoryName);
-      setIsSavingCategory(false);
+      const result = await createGoalCategory.mutateAsync(trimmedCategoryName);
 
       if ("error" in result) {
         setError(result.error);
@@ -116,7 +113,6 @@ export function AddGoalModal({
       description: form.description.trim(),
     });
     handleClose();
-    router.refresh();
   }
 
   const builtinCategories =
@@ -302,7 +298,7 @@ export function AddGoalModal({
             <Button onClick={handleClose} type="button" variant="outline">
               Annuleren
             </Button>
-            <Button disabled={isSavingCategory} type="submit" variant="primary">
+            <Button disabled={createGoalCategory.isPending} type="submit" variant="primary">
               Toevoegen
             </Button>
           </div>

@@ -7,11 +7,18 @@ import { resolveToolbarActionLabel } from "@/lib/ai/toolbar-actions";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
 import { isRichTextEmpty } from "@/lib/utils/rich-text";
 
+interface StreamingAiBlock {
+  afterBlockId: string;
+  action: string;
+  content: string;
+}
+
 interface JournalFlowProps {
   blocks: EntryBlock[];
   focusBlockId: string | null;
   isAiLoading: boolean;
   aiLoadingAfterBlockId: string | null;
+  streamingAiBlock?: StreamingAiBlock | null;
   aiError: string | null;
   aiStatus: "idle" | "loading" | "success" | "unavailable";
   aiStatusMessage: string | null;
@@ -48,11 +55,42 @@ function EditableUserBlock({
   );
 }
 
+function AiResponseBlock({
+  action,
+  content,
+  isStreaming = false,
+}: Readonly<{
+  action: string;
+  content: string;
+  isStreaming?: boolean;
+}>) {
+  return (
+    <article className="rounded-xl border-l-2 border-lumina-500 bg-lumina-500/5 px-4 py-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-medium text-lumina-500">Lumina</p>
+        <p className="text-xs text-lumina-700 dark:text-lumina-300">
+          {getActionLabel(action)}
+        </p>
+      </div>
+      <p className="mt-3 whitespace-pre-wrap font-serif text-lg leading-relaxed text-lumina-700 dark:text-lumina-300">
+        {content}
+        {isStreaming ? (
+          <span
+            aria-hidden="true"
+            className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-lumina-500 align-text-bottom"
+          />
+        ) : null}
+      </p>
+    </article>
+  );
+}
+
 export function JournalFlow({
   blocks,
   focusBlockId,
   isAiLoading,
   aiLoadingAfterBlockId,
+  streamingAiBlock = null,
   aiError,
   aiStatus,
   aiStatusMessage,
@@ -73,6 +111,11 @@ export function JournalFlow({
             );
           }
 
+          const showLegacyLoading =
+            isAiLoading &&
+            aiLoadingAfterBlockId === block.id &&
+            !streamingAiBlock;
+
           return (
             <div key={block.id}>
               <EditableUserBlock
@@ -81,8 +124,17 @@ export function JournalFlow({
                 content={block.content}
                 onChange={onUserBlockChange!}
               />
-              {isAiLoading && aiLoadingAfterBlockId === block.id ? (
+              {showLegacyLoading ? (
                 <p className="mt-4 text-sm text-lumina-500">Even nadenken…</p>
+              ) : null}
+              {streamingAiBlock?.afterBlockId === block.id ? (
+                <div className="mt-6">
+                  <AiResponseBlock
+                    action={streamingAiBlock.action}
+                    content={streamingAiBlock.content}
+                    isStreaming
+                  />
+                </div>
               ) : null}
               {aiStatus === "success" &&
               aiStatusMessage &&
@@ -108,20 +160,11 @@ export function JournalFlow({
         }
 
         return (
-          <article
-            className="rounded-xl border-l-2 border-lumina-500 bg-lumina-500/5 px-4 py-4"
+          <AiResponseBlock
+            action={block.action}
+            content={block.content}
             key={block.id}
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm font-medium text-lumina-500">Lumina</p>
-              <p className="text-xs text-lumina-700 dark:text-lumina-300">
-                {getActionLabel(block.action)}
-              </p>
-            </div>
-            <p className="mt-3 whitespace-pre-wrap font-serif text-lg leading-relaxed text-lumina-700 dark:text-lumina-300">
-              {block.content}
-            </p>
-          </article>
+          />
         );
       })}
     </div>

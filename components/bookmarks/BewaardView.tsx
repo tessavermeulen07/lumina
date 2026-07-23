@@ -4,15 +4,9 @@ import { useState } from "react";
 import { BookmarkedItemCard } from "@/components/bookmarks/BookmarkedItemCard";
 import { EntryDetailModal } from "@/components/history/EntryDetailModal";
 import { UnlockPrivateEntryDialog } from "@/components/journal/UnlockPrivateEntryDialog";
-import { getEntryWithMeta } from "@/lib/entries/finalize-entry";
-import { unlockPrivateEntry } from "@/lib/entries/unlock-private-entry";
-import type { BookmarkedItem } from "@/lib/types/bookmarks";
+import { useBookmarkedItems, useEntryMutations } from "@/lib/queries/use-entries";
 import type { Entry, EntryAnalysis } from "@/lib/types/database";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
-
-interface BewaardViewProps {
-  items: BookmarkedItem[];
-}
 
 interface ModalState {
   entry: Entry;
@@ -20,11 +14,12 @@ interface ModalState {
   analysis: EntryAnalysis | null;
 }
 
-export function BewaardView({ items }: Readonly<BewaardViewProps>) {
+export function BewaardView() {
+  const { data: items = [], isLoading, isError } = useBookmarkedItems();
+  const { fetchEntryDetail, unlockPrivate } = useEntryMutations();
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [unlockEntryId, setUnlockEntryId] = useState<string | null>(null);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
   const [isLoadingEntry, setIsLoadingEntry] = useState(false);
 
   async function openEntry(entryId: string) {
@@ -43,18 +38,22 @@ export function BewaardView({ items }: Readonly<BewaardViewProps>) {
     }
 
     setIsLoadingEntry(true);
-    const data = await getEntryWithMeta(entryId);
-    setIsLoadingEntry(false);
 
-    if (!data) {
-      return;
+    try {
+      const data = await fetchEntryDetail(entryId);
+
+      if (!data) {
+        return;
+      }
+
+      setModalState({
+        entry: data.entry,
+        blocks: data.blocks,
+        analysis: data.analysis,
+      });
+    } finally {
+      setIsLoadingEntry(false);
     }
-
-    setModalState({
-      entry: data.entry,
-      blocks: data.blocks,
-      analysis: data.analysis,
-    });
   }
 
   async function handleUnlock(password: string) {
@@ -62,12 +61,12 @@ export function BewaardView({ items }: Readonly<BewaardViewProps>) {
       return;
     }
 
-    setIsUnlocking(true);
     setUnlockError(null);
 
-    const result = await unlockPrivateEntry(unlockEntryId, password);
-
-    setIsUnlocking(false);
+    const result = await unlockPrivate.mutateAsync({
+      entryId: unlockEntryId,
+      password,
+    });
 
     if ("error" in result) {
       setUnlockError(result.error);
@@ -80,6 +79,18 @@ export function BewaardView({ items }: Readonly<BewaardViewProps>) {
       blocks: result.blocks,
       analysis: result.analysis,
     });
+  }
+
+  if (isLoading) {
+    return <p className="text-muted">Bewaarde items laden…</p>;
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-red-600" role="alert">
+        Bewaarde items konden niet worden geladen.
+      </p>
+    );
   }
 
   if (items.length === 0) {
@@ -113,7 +124,7 @@ export function BewaardView({ items }: Readonly<BewaardViewProps>) {
 
       <UnlockPrivateEntryDialog
         error={unlockError}
-        isLoading={isUnlocking}
+        isLoading={unlockPrivate.isPending}
         isOpen={unlockEntryId !== null}
         onClose={() => {
           setUnlockEntryId(null);

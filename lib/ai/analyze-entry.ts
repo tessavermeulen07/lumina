@@ -46,10 +46,9 @@ STRICT JSON SCHEMA:
     }
   ],
   "themes": [
-  {
-    "Overkoepelend thema in één of twee woorden (bijv. 'Werk', 'Relaties', Grenzen' 'Sociale Interactie'). Maximaal
-    4 thema's per entry. Schrijf met een hoofdletter."
-  }
+    {
+      "name": "Overkoepelend thema in één of twee woorden (bijv. 'Werk', 'Relaties', 'Grenzen'). Maximaal 4 thema's per entry. Schrijf met een hoofdletter."
+    }
   ]
 }
 `;

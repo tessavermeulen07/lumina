@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { dismissPopup } from "@/lib/checkins/dismiss-popup";
 import type { PendingPopup } from "@/lib/checkins/get-pending-popup";
-import { markPopupShown } from "@/lib/checkins/mark-popup-shown";
+import { useCheckinPopupMutations } from "@/lib/queries/use-checkins";
 
 interface CheckinPopupProps {
   popup: PendingPopup | null;
@@ -13,8 +12,8 @@ interface CheckinPopupProps {
 
 export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
   const router = useRouter();
+  const { markShown, dismiss } = useCheckinPopupMutations();
   const [isOpen, setIsOpen] = useState(Boolean(popup));
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setIsOpen(Boolean(popup));
@@ -22,7 +21,7 @@ export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
 
   useEffect(() => {
     if (!popup) return;
-    void markPopupShown(popup.type);
+    markShown.mutate(popup.type);
   }, [popup]);
 
   if (!popup || !isOpen) {
@@ -30,13 +29,12 @@ export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
   }
 
   const activePopup = popup;
+  const isPending = dismiss.isPending;
 
-  function handleAction(href: string) {
-    startTransition(async () => {
-      await dismissPopup(activePopup.type);
-      setIsOpen(false);
-      router.push(href);
-    });
+  async function handleAction(href: string) {
+    await dismiss.mutateAsync(activePopup.type);
+    setIsOpen(false);
+    router.push(href);
   }
 
   return (
@@ -46,7 +44,7 @@ export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
         className="absolute inset-0 bg-foreground/20"
         disabled={isPending}
         onClick={() => {
-          handleAction(activePopup.secondaryHref);
+          void handleAction(activePopup.secondaryHref);
         }}
         type="button"
       />
@@ -62,7 +60,7 @@ export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
             className="h-8 px-3 text-xs"
             disabled={isPending}
             onClick={() => {
-              handleAction(activePopup.secondaryHref);
+              void handleAction(activePopup.secondaryHref);
             }}
             type="button"
             variant="outline"
@@ -73,7 +71,7 @@ export function CheckinPopup({ popup }: Readonly<CheckinPopupProps>) {
             className="h-8 px-3 text-xs"
             disabled={isPending}
             onClick={() => {
-              handleAction(activePopup.href);
+              void handleAction(activePopup.href);
             }}
             type="button"
             variant="primary"

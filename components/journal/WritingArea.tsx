@@ -11,19 +11,9 @@ import { ImageUploadModal } from "@/components/journal/ImageUploadModal";
 import { SetPrivateDialog } from "@/components/journal/SetPrivateDialog";
 import { WritingToolbar } from "@/components/journal/WritingToolbar";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { respondToEntryAction } from "@/lib/ai/respond-to-entry";
-import { ensureEntryDraft } from "@/lib/entries/ensure-entry-draft";
-import {
-  createEntryWithUserBlock,
-  saveUserBlock,
-} from "@/lib/entries/entry-blocks";
-import { deleteEntry } from "@/lib/entries/delete-entry";
-import { finalizeEntry } from "@/lib/entries/finalize-entry";
-import {
-  makeEntryPrivate,
-  removeEntryPrivate,
-  toggleEntryBookmark,
-} from "@/lib/entries/toggle-entry-flags";
+import { finalizeEntryAiStreamAction } from "@/lib/ai/respond-to-entry";
+import { useEntryMutations } from "@/lib/queries/use-entries";
+import { useLuminaStream } from "@/lib/queries/use-lumina-stream";
 import {
   createLocalUserBlock,
   getActiveUserBlock,
@@ -104,6 +94,11 @@ function WritingAreaContent({
   const [aiLoadingAfterBlockId, setAiLoadingAfterBlockId] = useState<
     string | null
   >(null);
+  const [streamingAiBlock, setStreamingAiBlock] = useState<{
+    afterBlockId: string;
+    action: string;
+    content: string;
+  } | null>(null);
 
   const entryIdRef = useRef<string | null>(initialEntryId);
   const isSavingRef = useRef(false);
@@ -118,6 +113,18 @@ function WritingAreaContent({
   const reflectionPromptIdRef = useRef(reflectionPromptId);
   const goalIdRef = useRef(resolvedGoalId);
   const goalPromptRef = useRef(resolvedGoalPrompt);
+  const {
+    createDraft,
+    saveDraftBlock,
+    ensureDraft,
+    removeEntry,
+    toggleBookmark,
+    setPrivate,
+    unsetPrivate,
+    finalize,
+    invalidateAll,
+  } = useEntryMutations();
+  const { streamLumina, resetStream } = useLuminaStream();
   const aiSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -182,7 +189,8 @@ function WritingAreaContent({
 
       try {
         if (!entryIdRef.current) {
-          const result = await createEntryWithUserBlock(trimmed, {
+          const result = await createDraft.mutateAsync({
+            content: trimmed,
             reflectionPeriod: reflectionPeriodRef.current,
           });
 
@@ -206,11 +214,11 @@ function WritingAreaContent({
 
           setDraftStatus("saved");
         } else {
-          const result = await saveUserBlock(
-            entryIdRef.current,
+          const result = await saveDraftBlock.mutateAsync({
+            entryId: entryIdRef.current,
             blockId,
-            trimmed,
-          );
+            content: trimmed,
+          });
 
           if ("error" in result) {
             setDraftStatus("error");
@@ -233,7 +241,7 @@ function WritingAreaContent({
         isSavingRef.current = false;
       }
     },
-    [],
+    [createDraft, saveDraftBlock],
   );
 
   async function flushPendingSaves() {
@@ -281,7 +289,7 @@ function WritingAreaContent({
     }
 
     const activeBlock = getActiveUserBlock(blocks);
-    const result = await ensureEntryDraft({
+    const result = await ensureDraft.mutateAsync({
       reflectionPeriod: reflectionPeriodRef.current,
     });
 
@@ -327,7 +335,7 @@ function WritingAreaContent({
 
     await flushPendingSaves();
 
-    const result = await finalizeEntry({
+    const result = await finalize.mutateAsync({
       entryId: entryIdRef.current ?? undefined,
       blocks,
       reflectionPeriod: reflectionPeriodRef.current,
@@ -351,7 +359,7 @@ function WritingAreaContent({
     setIsDeleting(true);
 
     if (entryIdRef.current) {
-      const result = await deleteEntry(entryIdRef.current);
+      const result = await removeEntry.mutateAsync(entryIdRef.current);
 
       if ("error" in result) {
         setDraftStatus("error");
@@ -386,7 +394,7 @@ function WritingAreaContent({
 
     try {
       const resolvedEntryId = await handleEnsureEntry();
-      const result = await toggleEntryBookmark(resolvedEntryId);
+      const result = await toggleBookmark.mutateAsync(resolvedEntryId);
 
       if ("error" in result) {
         setDraftStatus("error");
@@ -411,11 +419,11 @@ function WritingAreaContent({
 
     try {
       const resolvedEntryId = await handleEnsureEntry();
-      const result = await makeEntryPrivate(
-        resolvedEntryId,
+      const result = await setPrivate.mutateAsync({
+        entryId: resolvedEntryId,
         password,
         confirmPassword,
-      );
+      });
 
       if ("error" in result) {
         setPrivateError(result.error);
@@ -443,7 +451,10 @@ function WritingAreaContent({
     setIsPrivateLoading(true);
     setPrivateError(null);
 
-    const result = await removeEntryPrivate(entryIdRef.current, password);
+    const result = await unsetPrivate.mutateAsync({
+      entryId: entryIdRef.current,
+      password,
+    });
 
     setIsPrivateLoading(false);
 
@@ -476,19 +487,93 @@ function WritingAreaContent({
     setAiStatusMessage("Bezig met je AI-actie…");
     setAiError(null);
     setAiLoadingAfterBlockId(activeBlock?.id ?? null);
+    setStreamingAiBlock(null);
+    resetStream();
 
     if (activeBlock && entryIdRef.current) {
       await persistUserBlock(activeBlock.id, activeBlock.content);
     }
 
-    const result = await respondToEntryAction({
-      actionLabel,
-      entryId: entryIdRef.current ?? undefined,
-      activeUserBlockId: activeBlock?.id,
-      activeUserContent: activeContent,
+    let streamAfterBlockId = activeBlock?.id ?? "";
+    const streamAction = actionLabel;
+
+    const streamOutcome = await streamLumina(
+      {
+        mode: "entry_toolbar",
+        actionLabel,
+        entryId: entryIdRef.current ?? undefined,
+        activeUserBlockId: activeBlock?.id,
+        activeUserContent: activeContent,
+      },
+      {
+        onReady: ({ entryMeta }) => {
+          if (entryMeta) {
+            streamAfterBlockId = entryMeta.activeBlockId;
+            entryIdRef.current = entryMeta.entryId;
+            setEntryId(entryMeta.entryId);
+          }
+
+          setStreamingAiBlock({
+            afterBlockId: streamAfterBlockId,
+            action: streamAction,
+            content: "",
+          });
+        },
+        onChunk: (text) => {
+          setStreamingAiBlock({
+            afterBlockId: streamAfterBlockId,
+            action: streamAction,
+            content: text,
+          });
+        },
+      },
+    );
+
+    if (!streamOutcome.ok) {
+      if (streamOutcome.cancelled) {
+        setIsAiLoading(false);
+        setStreamingAiBlock(null);
+        setAiStatus("idle");
+        setAiStatusMessage(null);
+        return;
+      }
+
+      const message = streamOutcome.error ?? "AI-actie kon niet worden uitgevoerd.";
+      setIsAiLoading(false);
+      setAiStatus("unavailable");
+      setAiStatusMessage(message);
+      setStreamingAiBlock(null);
+      setAiError(message);
+      return;
+    }
+
+    const streamResult = streamOutcome.result;
+
+    const { text, entryMeta } = streamResult;
+
+    if (!entryMeta) {
+      setIsAiLoading(false);
+      setAiError("Entry kon niet worden bijgewerkt.");
+      setAiStatus("unavailable");
+      setStreamingAiBlock(null);
+      return;
+    }
+
+    setStreamingAiBlock({
+      afterBlockId: entryMeta.activeBlockId,
+      action: actionLabel,
+      content: text,
+    });
+
+    const result = await finalizeEntryAiStreamAction({
+      entryId: entryMeta.entryId,
+      activeBlockId: entryMeta.activeBlockId,
+      action: entryMeta.action,
+      responseText: text,
     });
 
     setIsAiLoading(false);
+    setStreamingAiBlock(null);
 
     if ("error" in result) {
       setAiError(result.error);
@@ -521,6 +606,8 @@ function WritingAreaContent({
         lastSavedContentRef.current.set(block.id, block.content.trim());
       }
     }
+
+    void invalidateAll();
   }
 
   if (reviewAnalysis) {
@@ -543,6 +630,7 @@ function WritingAreaContent({
           focusBlockId={focusBlockId}
           isAiLoading={isAiLoading}
           onUserBlockChange={handleUserBlockChange}
+          streamingAiBlock={streamingAiBlock}
         />
 
         <WritingToolbar

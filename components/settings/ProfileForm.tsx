@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { createClient } from "@/lib/supabase/client";
 import { coachOptions } from "@/lib/constants/onboarding";
-import { updateProfile } from "@/lib/profile/update-profile";
+import { useUpdateProfile } from "@/lib/queries/use-profile";
 import type { AiCoachStyle } from "@/lib/types/onboarding";
 import {
   COMMON_TIMEZONE_OPTIONS,
@@ -40,6 +40,7 @@ export function ProfileForm({
   eveningReflectionTime: initialEveningReflectionTime,
 }: Readonly<ProfileFormProps>) {
   const router = useRouter();
+  const updateProfile = useUpdateProfile();
   const usernameId = useId();
   const coachStyleId = useId();
   const timezoneId = useId();
@@ -62,7 +63,7 @@ export function ProfileForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const isPending = updateProfile.isPending;
 
   useEffect(() => {
     if (window.location.hash !== "#meldingen") {
@@ -83,27 +84,28 @@ export function ProfileForm({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    void submitProfile();
+  }
+
+  async function submitProfile() {
     setMessage(null);
     setError(null);
 
-    startTransition(async () => {
-      const result = await updateProfile({
-        username: username.trim(),
-        aiPersonaPreference: coachStyle || null,
-        timezone,
-        goalsCheckinTime,
-        morningReflectionTime,
-        eveningReflectionTime,
-      });
-
-      if ("error" in result) {
-        setError(result.error);
-        return;
-      }
-
-      setMessage("Je profiel is bijgewerkt.");
-      router.refresh();
+    const result = await updateProfile.mutateAsync({
+      username: username.trim(),
+      aiPersonaPreference: coachStyle || null,
+      timezone,
+      goalsCheckinTime,
+      morningReflectionTime,
+      eveningReflectionTime,
     });
+
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+
+    setMessage("Je profiel is bijgewerkt.");
   }
 
   async function handleSignOut() {

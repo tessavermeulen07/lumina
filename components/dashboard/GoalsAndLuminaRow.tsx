@@ -1,22 +1,17 @@
 import { AskLuminaSection } from "@/components/dashboard/AskLuminaSection";
 import { GoalsSection } from "@/components/dashboard/GoalsSection";
 import type { LuminaDashboardQuestion } from "@/lib/ai/lumina-dashboard-question";
-import type { Goal, GoalCategoryOption } from "@/lib/types/goal";
 
 interface GoalsAndLuminaRowProps {
-  goals: Goal[];
-  categories: GoalCategoryOption[];
   questions: LuminaDashboardQuestion[];
 }
 
 export function GoalsAndLuminaRow({
-  goals,
-  categories,
   questions,
 }: Readonly<GoalsAndLuminaRowProps>) {
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-      <GoalsSection categories={categories} initialGoals={goals} />
+      <GoalsSection />
       <AskLuminaSection questions={questions} />
     </section>
   );

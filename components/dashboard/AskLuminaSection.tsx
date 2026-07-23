@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { askLumina } from "@/lib/ai/ask-lumina";
+import { useState } from "react";
+import { useLuminaStream } from "@/lib/queries/use-lumina-stream";
 import {
   hasPersonalizedQuestions,
   type LuminaDashboardQuestion,
@@ -14,29 +14,34 @@ interface AskLuminaSectionProps {
 export function AskLuminaSection({
   questions,
 }: Readonly<AskLuminaSectionProps>) {
+  const {
+    streamLumina,
+    streamingText,
+    isStreaming,
+    error,
+    resetStream,
+  } = useLuminaStream();
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
   const [customQuestion, setCustomQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [completedAnswer, setCompletedAnswer] = useState<string | null>(null);
 
   const activeQuestion = selectedQuestion ?? customQuestion.trim();
   const isPersonalized = hasPersonalizedQuestions(questions);
+  const isPending = isStreaming;
+  const displayedAnswer = isStreaming ? streamingText : completedAnswer;
 
-  function handleAsk(question: string) {
-    setError(null);
-    setAnswer(null);
+  async function handleAsk(question: string) {
+    resetStream();
+    setCompletedAnswer(null);
 
-    startTransition(async () => {
-      const result = await askLumina(question);
-
-      if ("error" in result) {
-        setError(result.error);
-        return;
-      }
-
-      setAnswer(result.answer);
+    const result = await streamLumina({
+      mode: "dashboard",
+      question,
     });
+
+    if (result.ok) {
+      setCompletedAnswer(result.result.text);
+    }
   }
 
   return (
@@ -63,7 +68,7 @@ export function AskLuminaSection({
               onClick={() => {
                 setSelectedQuestion(question.question_text);
                 setCustomQuestion("");
-                handleAsk(question.question_text);
+                void handleAsk(question.question_text);
               }}
               title={question.question_text}
               type="button"
@@ -88,7 +93,9 @@ export function AskLuminaSection({
           <button
             className="rounded-xl bg-lumina-500 px-4 py-2.5 text-sm font-medium text-surface transition-colors hover:bg-lumina-700 disabled:opacity-50"
             disabled={isPending || !activeQuestion}
-            onClick={() => handleAsk(activeQuestion)}
+            onClick={() => {
+              void handleAsk(activeQuestion);
+            }}
             type="button"
           >
             {isPending ? "Bezig…" : "Vraag"}
@@ -101,11 +108,17 @@ export function AskLuminaSection({
           </p>
         ) : null}
 
-        {answer ? (
+        {displayedAnswer ? (
           <div className="mt-4 rounded-xl border border-lumina-500/15 bg-background p-4">
             <p className="text-sm font-medium text-lumina-500">Antwoord</p>
             <p className="mt-2 whitespace-pre-wrap leading-relaxed text-foreground">
-              {answer}
+              {displayedAnswer}
+              {isStreaming ? (
+                <span
+                  aria-hidden="true"
+                  className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-lumina-500 align-text-bottom"
+                />
+              ) : null}
             </p>
           </div>
         ) : null}

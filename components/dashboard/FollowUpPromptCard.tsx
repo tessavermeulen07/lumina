@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { BookmarkFilledIcon, BookmarkIcon } from "@/components/journal/WritingToolbarIcons";
-import { toggleBookmarkPrompt } from "@/lib/dashboard/reflection-prompt-actions";
+import { usePromptMutations } from "@/lib/queries/use-prompts";
 import type { FollowUpPromptCardData } from "@/lib/types/dashboard-reflection";
 
 function PencilIcon() {
@@ -34,10 +33,9 @@ interface FollowUpPromptCardProps {
 export function FollowUpPromptCard({
   prompt,
 }: Readonly<FollowUpPromptCardProps>) {
-  const router = useRouter();
+  const { toggleBookmark } = usePromptMutations();
   const [isBookmarked, setIsBookmarked] = useState(prompt.isBookmarked);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setIsBookmarked(prompt.isBookmarked);
@@ -46,7 +44,7 @@ export function FollowUpPromptCard({
   async function handleToggleBookmark() {
     setError(null);
 
-    const result = await toggleBookmarkPrompt(prompt.id);
+    const result = await toggleBookmark.mutateAsync(prompt.id);
 
     if ("error" in result) {
       setError(result.error);
@@ -54,9 +52,6 @@ export function FollowUpPromptCard({
     }
 
     setIsBookmarked((current) => !current);
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   return (
@@ -77,7 +72,7 @@ export function FollowUpPromptCard({
                 ? "bg-lumina-500/15 text-lumina-500"
                 : "text-muted hover:bg-lumina-500/10 hover:text-lumina-500"
             }`}
-            disabled={isPending}
+            disabled={toggleBookmark.isPending}
             onClick={() => {
               void handleToggleBookmark();
             }}

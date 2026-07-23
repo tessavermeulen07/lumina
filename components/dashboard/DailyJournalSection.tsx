@@ -1,20 +1,20 @@
+"use client";
+
 import { CheckInCard } from "@/components/dashboard/CheckInCard";
 import { DailyJournalCarousel } from "@/components/dashboard/DailyJournalCarousel";
 import { FollowUpPromptCard } from "@/components/dashboard/FollowUpPromptCard";
-import type {
-  DailyCheckInData,
-  FollowUpPromptCardData,
-} from "@/lib/types/dashboard-reflection";
+import { useFollowUpPrompts } from "@/lib/queries/use-prompts";
+import type { DailyCheckInData } from "@/lib/types/dashboard-reflection";
 
 interface DailyJournalSectionProps {
   checkInData: DailyCheckInData;
-  followUpPrompts: FollowUpPromptCardData[];
 }
 
 export function DailyJournalSection({
   checkInData,
-  followUpPrompts,
 }: Readonly<DailyJournalSectionProps>) {
+  const { data: followUpPrompts = [], isLoading, isError } = useFollowUpPrompts();
+
   return (
     <div className="space-y-10">
       <section className="space-y-4">
@@ -28,7 +28,13 @@ export function DailyJournalSection({
       </section>
 
       <DailyJournalCarousel title="Reflecteer verder">
-        {followUpPrompts.length === 0 ? (
+        {isLoading ? (
+          <p className="min-w-[200px] text-sm text-muted">Vervolgvragen laden…</p>
+        ) : isError ? (
+          <p className="min-w-[200px] text-sm text-red-600" role="alert">
+            Vervolgvragen konden niet worden geladen.
+          </p>
+        ) : followUpPrompts.length === 0 ? (
           <p className="min-w-[200px] text-sm text-muted">
             Schrijf je eerste reflectie om persoonlijke vervolgvragen te
             ontvangen.

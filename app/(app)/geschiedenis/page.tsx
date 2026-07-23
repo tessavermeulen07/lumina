@@ -1,28 +1,23 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { GeschiedenisView } from "@/components/history/GeschiedenisView";
-import { getHistoryByWeek } from "@/lib/insights/get-history-by-week";
+import { fetchHistoryByWeek } from "@/lib/queries/dashboard-actions";
+import { getQueryClient } from "@/lib/queries/get-query-client";
+import { queryKeys } from "@/lib/queries/keys";
 
-interface GeschiedenisPageProps {
-  searchParams: Promise<{
-    week?: string;
-    entry?: string;
-    tab?: "invoer" | "analyse";
-  }>;
-}
+export default async function GeschiedenisPage() {
+  const queryClient = getQueryClient();
 
-export default async function GeschiedenisPage({
-  searchParams,
-}: GeschiedenisPageProps) {
-  const { week, entry, tab } = await searchParams;
-  const weekData = await getHistoryByWeek(week);
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.history.week(undefined),
+    queryFn: () => fetchHistoryByWeek(),
+  });
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-serif text-3xl text-foreground">Geschiedenis</h1>
-      <GeschiedenisView
-        selectedEntryId={entry}
-        selectedTab={tab ?? "invoer"}
-        weekData={weekData}
-      />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <h1 className="font-serif text-3xl text-foreground">Geschiedenis</h1>
+        <GeschiedenisView />
+      </div>
+    </HydrationBoundary>
   );
 }

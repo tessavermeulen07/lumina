@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { logIntentionCheckin } from "@/lib/habits/log-intention-checkin";
+import { useGoalMutations } from "@/lib/queries/use-goals";
 import type { GoalCheckInData } from "@/lib/types/intention-checkin";
 
 interface GoalCheckInCardProps {
@@ -11,15 +10,14 @@ interface GoalCheckInCardProps {
 }
 
 export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
-  const router = useRouter();
+  const { logGoalCheckin } = useGoalMutations();
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
   const [isHidden, setIsHidden] = useState(false);
 
   async function handleCheckin(status: "completed" | "skipped") {
     setError(null);
 
-    const result = await logIntentionCheckin({
+    const result = await logGoalCheckin.mutateAsync({
       habitId: data.id,
       queueItemId: data.queueItemId,
       status,
@@ -32,9 +30,6 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
     }
 
     setIsHidden(true);
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   if (isHidden) {
@@ -64,7 +59,7 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
 
       <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
         <Button
-          disabled={isPending}
+          disabled={logGoalCheckin.isPending}
           onClick={() => {
             void handleCheckin("completed");
           }}
@@ -74,7 +69,7 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
           Gedaan
         </Button>
         <Button
-          disabled={isPending}
+          disabled={logGoalCheckin.isPending}
           onClick={() => {
             void handleCheckin("skipped");
           }}
@@ -83,7 +78,7 @@ export function GoalCheckInCard({ data }: Readonly<GoalCheckInCardProps>) {
         >
           Overgeslagen
         </Button>
-        <Button disabled={isPending} href={data.href} variant="outline">
+        <Button disabled={logGoalCheckin.isPending} href={data.href} variant="outline">
           Schrijf erover
         </Button>
       </div>

@@ -1,24 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { EntryDetailModal } from "@/components/history/EntryDetailModal";
 import { HistoryEntryCard } from "@/components/history/HistoryEntryCard";
 import { HistoryWeekHeader } from "@/components/history/HistoryWeekHeader";
 import { UnlockPrivateEntryDialog } from "@/components/journal/UnlockPrivateEntryDialog";
-import { getEntryWithMeta } from "@/lib/entries/finalize-entry";
-import { unlockPrivateEntry } from "@/lib/entries/unlock-private-entry";
-import type { HistoryWeekData } from "@/lib/types/history";
+import { useEntryMutations } from "@/lib/queries/use-entries";
+import { useHistoryWeek } from "@/lib/queries/use-history";
 import type { Entry, EntryAnalysis } from "@/lib/types/database";
 import type { EntryBlock } from "@/lib/types/entry-blocks";
 
 type DetailTab = "invoer" | "analyse";
-
-interface GeschiedenisViewProps {
-  weekData: HistoryWeekData;
-  selectedEntryId?: string;
-  selectedTab?: DetailTab;
-}
 
 interface ModalState {
   entry: Entry;
@@ -27,23 +20,24 @@ interface ModalState {
   tab: DetailTab;
 }
 
-export function GeschiedenisView({
-  weekData,
-  selectedEntryId,
-  selectedTab = "invoer",
-}: Readonly<GeschiedenisViewProps>) {
+function GeschiedenisViewContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const weekStart = searchParams.get("week") ?? undefined;
+  const selectedEntryId = searchParams.get("entry") ?? undefined;
+  const selectedTab = (searchParams.get("tab") as DetailTab | null) ?? "invoer";
+  const { data: weekData, isLoading, isError } = useHistoryWeek(weekStart);
+  const { fetchEntryDetail, unlockPrivate } = useEntryMutations();
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [isLoadingEntry, setIsLoadingEntry] = useState(false);
   const [unlockEntryId, setUnlockEntryId] = useState<string | null>(null);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
 
-  function navigateWeek(weekStart: string | null) {
+  function navigateWeek(nextWeekStart: string | null) {
     const params = new URLSearchParams();
 
-    if (weekStart) {
-      params.set("week", weekStart);
+    if (nextWeekStart) {
+      params.set("week", nextWeekStart);
     }
 
     const query = params.toString();
@@ -51,6 +45,10 @@ export function GeschiedenisView({
   }
 
   function buildWeekUrl(entryId?: string, tab?: DetailTab) {
+    if (!weekData) {
+      return "/geschiedenis";
+    }
+
     const params = new URLSearchParams();
     params.set("week", weekData.weekStart);
 
@@ -63,6 +61,10 @@ export function GeschiedenisView({
   }
 
   async function openEntry(entryId: string, tab: DetailTab = "invoer") {
+    if (!weekData) {
+      return;
+    }
+
     const historyEntry = weekData.dayGroups
       .flatMap((group) => group.entries)
       .find((item) => item.id === entryId);
@@ -75,22 +77,24 @@ export function GeschiedenisView({
 
     setIsLoadingEntry(true);
 
-    const data = await getEntryWithMeta(entryId);
+    try {
+      const data = await fetchEntryDetail(entryId);
 
-    setIsLoadingEntry(false);
+      if (!data) {
+        return;
+      }
 
-    if (!data) {
-      return;
+      setModalState({
+        entry: data.entry,
+        blocks: data.blocks,
+        analysis: data.analysis,
+        tab,
+      });
+
+      router.replace(buildWeekUrl(entryId, tab), { scroll: false });
+    } finally {
+      setIsLoadingEntry(false);
     }
-
-    setModalState({
-      entry: data.entry,
-      blocks: data.blocks,
-      analysis: data.analysis,
-      tab,
-    });
-
-    router.replace(buildWeekUrl(entryId, tab), { scroll: false });
   }
 
   async function handleUnlock(password: string) {
@@ -98,18 +102,19 @@ export function GeschiedenisView({
       return;
     }
 
-    setIsUnlocking(true);
     setUnlockError(null);
 
-    const result = await unlockPrivateEntry(unlockEntryId, password);
-
-    setIsUnlocking(false);
+    const result = await unlockPrivate.mutateAsync({
+      entryId: unlockEntryId,
+      password,
+    });
 
     if ("error" in result) {
       setUnlockError(result.error);
       return;
     }
 
+    const unlockedEntryId = unlockEntryId;
     setUnlockEntryId(null);
     setModalState({
       entry: result.entry,
@@ -117,8 +122,7 @@ export function GeschiedenisView({
       analysis: result.analysis,
       tab: "invoer",
     });
-    router.replace(buildWeekUrl(unlockEntryId, "invoer"), { scroll: false });
-    router.refresh();
+    router.replace(buildWeekUrl(unlockedEntryId, "invoer"), { scroll: false });
   }
 
   function closeModal() {
@@ -127,10 +131,22 @@ export function GeschiedenisView({
   }
 
   useEffect(() => {
-    if (selectedEntryId && !modalState && !isLoadingEntry && !unlockEntryId) {
+    if (selectedEntryId && !modalState && !isLoadingEntry && !unlockEntryId && weekData) {
       void openEntry(selectedEntryId, selectedTab);
     }
-  }, [selectedEntryId, selectedTab]);
+  }, [selectedEntryId, selectedTab, weekData]);
+
+  if (isLoading || !weekData) {
+    return <p className="text-muted">Geschiedenis laden…</p>;
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-red-600" role="alert">
+        Geschiedenis kon niet worden geladen.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -185,7 +201,7 @@ export function GeschiedenisView({
 
       <UnlockPrivateEntryDialog
         error={unlockError}
-        isLoading={isUnlocking}
+        isLoading={unlockPrivate.isPending}
         isOpen={unlockEntryId !== null}
         onClose={() => {
           setUnlockEntryId(null);
@@ -200,5 +216,13 @@ export function GeschiedenisView({
         <p className="text-sm text-muted">Entry laden…</p>
       ) : null}
     </div>
+  );
+}
+
+export function GeschiedenisView() {
+  return (
+    <Suspense fallback={<p className="text-muted">Geschiedenis laden…</p>}>
+      <GeschiedenisViewContent />
+    </Suspense>
   );
 }
