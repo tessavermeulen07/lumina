@@ -3,7 +3,7 @@ name: Combinatie A emoties
 overview: Twinword op vertaalde tekst als primaire bron voor balkjes, OpenAI-gevoelens (intensity) als fallback en voor Nederlandse labels per smiley-kolom — zonder extra OpenAI-call door vertaling in de bestaande analyse-prompt.
 todos:
   - id: emotion-scores-util
-    content: "Nieuw lib/ai/emotion-scores.ts: merge, scoresFromFeelings, groupFeelingsByColumn, isEmptyTwinwordScores"
+    content: "Nieuw src/lib/ai/emotion-scores.ts: merge, scoresFromFeelings, groupFeelingsByColumn, isEmptyTwinwordScores"
     status: completed
   - id: analyze-entry-pipeline
     content: "analyze-entry.ts: prompt uitbreiden (english_plain_text, vaste feeling keys), volgorde OpenAI → Twinword → merge"
@@ -22,7 +22,7 @@ isProject: false
 
 # Combinatie A: Twinword + OpenAI-gevoelens (fallback)
 
-Zie `.cursor/plans/combinatie_a_emoties_36e074c0.plan.md` voor volledige specificatie.
+Zie dit document voor de volledige specificatie.
 
 ## Samenvatting
 

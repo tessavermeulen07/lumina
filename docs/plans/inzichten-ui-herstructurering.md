@@ -25,7 +25,7 @@ isProject: false
 
 # Inzichten UI herstructurering
 
-Zie `.cursor/plans/inzichten_ui_herstructurering_e2380c2f.plan.md` voor volledige specificatie.
+Zie dit document voor de volledige specificatie.
 
 ## Samenvatting
 

@@ -44,7 +44,7 @@ REGISTRATION_INVITE_CODE=
 
 ### 2. Server-side validatie
 
-In `lib/auth/register.ts`:
+In `src/lib/auth/register.ts`:
 
 - `inviteCode` in `RegisterRequestBody` en `parseRegisterRequestBody`.
 - `validateRegistrationInviteCode(submittedCode)`:
@@ -54,7 +54,7 @@ In `lib/auth/register.ts`:
   - Vergelijking met `crypto.timingSafeEqual` (trim + dummy-buffer bij lengte-mismatch).
   - Foute code → 403 `"Ongeldige uitnodigingscode."`
 
-In `app/api/auth/register/route.ts`:
+In `src/app/api/auth/register/route.ts`:
 
 - Na `parseRegisterRequestBody`, vóór `createUser`, invite-code valideren.
 
@@ -62,7 +62,7 @@ Volgorde: env-check service role → body parse → invite-code → user aanmake
 
 ### 3. UI: codeveld op registratieformulier
 
-In `components/marketing/RegisterCard.tsx`:
+In `src/components/features/marketing/RegisterCard.tsx`:
 
 - Veld **Uitnodigingscode** bovenaan het formulier.
 - `inviteCode` meesturen in POST body naar `/api/auth/register`.
@@ -79,7 +79,7 @@ Voorbeeld: `https://jouwdomein.nl/registreren?code=JOUW-CODE`
 
 | Onderdeel | Reden |
 |-----------|--------|
-| `middleware.ts` | `/registreren` blijft publiek; beveiliging zit in de API |
+| `src/middleware.ts` | `/registreren` blijft publiek; beveiliging zit in de API |
 | Marketing CTA's | Pagina blijft vindbaar; zonder code lukt registratie niet |
 | Supabase `enable_signup` | Route gebruikt `admin.createUser` via service role |
 | Database migration | Niet nodig voor optie 1 |

@@ -57,7 +57,7 @@ flowchart LR
 
 ### Huidige situatie
 
-- [`WritingToolbar.tsx`](components/journal/WritingToolbar.tsx): `fixed bottom-6` — blijft op viewport hangen, beweegt **niet** mee met langere entries
+- [`WritingToolbar.tsx`](src/components/features/journal/WritingToolbar.tsx): `fixed bottom-6` — blijft op viewport hangen, beweegt **niet** mee met langere entries
 - Opslaan is een klein icoon; status staat los boven de tekst
 
 ### Gewenste wijzigingen
@@ -65,9 +65,9 @@ flowchart LR
 **1. Meebewegend met de inhoud**
 
 - Toolbar **niet** `fixed` aan de viewport
-- Plaats de bar **in document flow**, direct onder [`JournalFlow`](components/journal/JournalFlow.tsx) binnen [`WritingArea.tsx`](components/journal/WritingArea.tsx)
+- Plaats de bar **in document flow**, direct onder [`JournalFlow`](src/components/features/journal/JournalFlow.tsx) binnen [`WritingArea.tsx`](src/components/features/journal/WritingArea.tsx)
 - Naarmate de entry langer wordt, schuift de balk mee naar beneden (onderaan de geschreven inhoud)
-- [`FooterGate.tsx`](components/layout/FooterGate.tsx): footer verbergen op `/schrijf` zodat de bar niet visueel concurreert met de site-footer
+- [`FooterGate.tsx`](src/components/layout/FooterGate.tsx): footer verbergen op `/schrijf` zodat de bar niet visueel concurreert met de site-footer
 - Ruimte: `mt-8` tussen laatste blok en toolbar; `pb-12` onder toolbar op schrijfpagina
 
 **2. Groter en duidelijk “definitief opslaan”**
@@ -109,16 +109,16 @@ CREATE TABLE public.entry_analyses (
 
 ### AI-pipeline
 
-**Nieuw** [`lib/ai/analyze-entry.ts`](lib/ai/analyze-entry.ts): structured OpenAI output + Twinword
+**Nieuw** [`src/lib/ai/analyze-entry.ts`](src/lib/ai/analyze-entry.ts): structured OpenAI output + Twinword
 
-**Nieuw** [`lib/entries/finalize-entry.ts`](lib/entries/finalize-entry.ts):
+**Nieuw** [`src/lib/entries/finalize-entry.ts`](src/lib/entries/finalize-entry.ts):
 
 1. Alle user blocks persisten + `syncEntryContent`
 2. `analyzeEntry` uitvoeren
 3. Upsert `entry_analyses` + `emotion_analyses`
 4. Retourneer `{ entryId, analysis }`
 
-**Wijzig** [`WritingArea.tsx`](components/journal/WritingArea.tsx) `handleManualSave`:
+**Wijzig** [`WritingArea.tsx`](src/components/features/journal/WritingArea.tsx) `handleManualSave`:
 
 1. `finalizeEntry(entryId)`
 2. Schakel naar **analyse-review modus** op de schrijfpagina (geen directe redirect)
@@ -127,7 +127,7 @@ Auto-save blijft alleen `saveUserBlock` / `createEntryWithUserBlock` — geen `f
 
 ### Analyse eerst tonen (nieuw Deel B2)
 
-**Nieuw** [`components/journal/EntryAnalysisReview.tsx`](components/journal/EntryAnalysisReview.tsx):
+**Nieuw** [`src/components/features/journal/EntryAnalysisReview.tsx`](src/components/features/journal/EntryAnalysisReview.tsx):
 
 - Vervangt tijdelijk schrijfweergave + toolbar na succesvol `finalizeEntry`
 - Toont volledige analyse (zelfde inhoud als Analyse-tab in geschiedenis-modal):
@@ -136,7 +136,7 @@ Auto-save blijft alleen `saveUserBlock` / `createEntryWithUserBlock` — geen `f
 - Onderaan vaste actie: primaire knop **"Ga verder"** → `router.push('/vandaag')`
 - Geen sluiten via backdrop; gebruiker leest bewust en kiest zelf wanneer hij/zij verdergaat
 
-**Herbruik** analyse-weergave in [`EntryDetailModal`](components/history/EntryDetailModal.tsx) via gedeeld component [`EntryAnalysisContent.tsx`](components/history/EntryAnalysisContent.tsx) — één bron voor analyse-UI.
+**Herbruik** analyse-weergave in [`EntryDetailModal`](src/components/features/history/EntryDetailModal.tsx) via gedeeld component [`EntryAnalysisContent.tsx`](src/components/features/history/EntryAnalysisContent.tsx) — één bron voor analyse-UI.
 
 Analyse en invoer later opnieuw bekijken via **Geschiedenis** → entry-kaart → modal (tabs Invoer / Analyse).
 
@@ -146,8 +146,8 @@ Analyse en invoer later opnieuw bekijken via **Geschiedenis** → entry-kaart �
 
 ### Navigatie & route
 
-- [`AppNav.tsx`](components/app/AppNav.tsx): label **"Geschiedenis"** i.p.v. "Eerdere entries"
-- Route: [`app/(app)/geschiedenis/page.tsx`](app/(app)/geschiedenis/page.tsx) (redirect of vervanging van `/entries`)
+- [`AppNav.tsx`](src/components/layout/AppNav.tsx): label **"Geschiedenis"** i.p.v. "Eerdere entries"
+- Route: [`src/app/(app)/geschiedenis/page.tsx`](src/app/(app)/geschiedenis/page.tsx) (redirect of vervanging van `/entries`)
 - Paginatitel: "Geschiedenis"
 
 ### Weekweergave bovenaan
@@ -170,7 +170,7 @@ Analyse en invoer later opnieuw bekijken via **Geschiedenis** → entry-kaart �
 - **`>`**: alleen zichtbaar als je **niet** op de huidige week bent én er een latere week met entries is; op "Deze week" geen `>`
 - Bij oudere weken: geen "Deze week"-label, alleen datumbereik in accentkleur
 
-**Data** [`lib/insights/get-history-by-week.ts`](lib/insights/get-history-by-week.ts): entries + analyses per week, weekgrenzen via [`startOfWeek`](lib/data/week-utils.ts), lijst van weken die entries bevatten (voor `>`-logica)
+**Data** [`src/lib/insights/get-history-by-week.ts`](src/lib/insights/get-history-by-week.ts): entries + analyses per week, weekgrenzen via [`startOfWeek`](src/lib/data/week-utils.ts), lijst van weken die entries bevatten (voor `>`-logica)
 
 ### Entry-lijst per dag
 
@@ -198,9 +198,9 @@ Klik op afgeronde kaart → opent **EntryDetailModal** (niet aparte routepagina)
 
 ## Deel D: Entry-detail modal
 
-**Nieuw** [`components/history/EntryDetailModal.tsx`](components/history/EntryDetailModal.tsx)
+**Nieuw** [`src/components/features/history/EntryDetailModal.tsx`](src/components/features/history/EntryDetailModal.tsx)
 
-- Overlay-patroon zoals [`LoginOverlay`](components/marketing/LoginOverlay.tsx) (`fixed inset-0`, backdrop blur)
+- Overlay-patroon zoals [`LoginOverlay`](src/components/features/marketing/LoginOverlay.tsx) (`fixed inset-0`, backdrop blur)
 - Breedte: `max-w-3xl` (breder dan login/registreren `max-w-lg`)
 - URL-state: `/geschiedenis?entry={id}&tab=invoer|analyse` zodat deelbaar en back-knop werkt
 - Sluiten via backdrop, Escape, of sluit-knop
@@ -209,7 +209,7 @@ Klik op afgeronde kaart → opent **EntryDetailModal** (niet aparte routepagina)
 
 | Tab | Inhoud |
 |-----|--------|
-| **Invoer** | Volledige entry-thread (user blocks + inline Lumina-antwoorden uit blokken), read-only [`JournalFlow`](components/journal/JournalFlow.tsx)-variant |
+| **Invoer** | Volledige entry-thread (user blocks + inline Lumina-antwoorden uit blokken), read-only [`JournalFlow`](src/components/features/journal/JournalFlow.tsx)-variant |
 | **Analyse** | `title`, `reflection_text`, `key_insight`, gevoelens (emoji + label), personen, thema's |
 
 **Invoer-tab:**
@@ -229,11 +229,11 @@ Link "Bewerken" in modal-footer → `/schrijf?id=...`
 
 ## Deel E: Inzichtenpagina (wekelijks)
 
-Ongewijzigd in scope: [`app/(app)/inzichten/page.tsx`](app/(app)/inzichten/page.tsx) met statistieken, woorden-per-dag staafgrafiek, emoties-grafiek, gevoelens/thema's in kaders, personen als leesbare woordwolk met `(Nx)`.
+Ongewijzigd in scope: [`src/app/(app)/inzichten/page.tsx`](src/app/(app)/inzichten/page.tsx) met statistieken, woorden-per-dag staafgrafiek, emoties-grafiek, gevoelens/thema's in kaders, personen als leesbare woordwolk met `(Nx)`.
 
-**Nieuw** [`lib/insights/get-weekly-insights.ts`](lib/insights/get-weekly-insights.ts) — aggregatie uit `entry_analyses` per week
+**Nieuw** [`src/lib/insights/get-weekly-insights.ts`](src/lib/insights/get-weekly-insights.ts) — aggregatie uit `entry_analyses` per week
 
-**Nav:** item "Inzichten" in [`AppNav.tsx`](components/app/AppNav.tsx)
+**Nav:** item "Inzichten" in [`AppNav.tsx`](src/components/layout/AppNav.tsx)
 
 Geschiedenis = teruglezen per entry; Inzichten = patronen en statistieken per week.
 
@@ -245,14 +245,14 @@ Geschiedenis = teruglezen per entry; Inzichten = patronen en statistieken per we
 |-------|---------|
 | Wijzig | `WritingToolbar.tsx`, `WritingArea.tsx`, `FooterGate.tsx` |
 | Nieuw migratie | `entry_analyses` (met `title`, `summary`) |
-| Nieuw | `lib/ai/analyze-entry.ts`, `lib/entries/finalize-entry.ts` |
-| Nieuw | `lib/insights/get-history-by-week.ts`, `get-weekly-insights.ts` |
-| Nieuw | `app/(app)/geschiedenis/page.tsx` |
-| Nieuw | `components/journal/EntryAnalysisReview.tsx`, `components/history/EntryAnalysisContent.tsx` |
-| Nieuw | `components/history/HistoryWeekHeader.tsx`, `HistoryEntryCard.tsx`, `EntryDetailModal.tsx` |
-| Nieuw | `app/(app)/inzichten/page.tsx`, `components/insights/*` |
-| Wijzig | `lib/types/database.ts`, `AppNav.tsx` |
-| Verwijder/redirect | `app/(app)/entries/page.tsx` → redirect naar `/geschiedenis` |
+| Nieuw | `src/lib/ai/analyze-entry.ts`, `src/lib/entries/finalize-entry.ts` |
+| Nieuw | `src/lib/insights/get-history-by-week.ts`, `get-weekly-insights.ts` |
+| Nieuw | `src/app/(app)/geschiedenis/page.tsx` |
+| Nieuw | `src/components/features/journal/EntryAnalysisReview.tsx`, `src/components/features/history/EntryAnalysisContent.tsx` |
+| Nieuw | `src/components/features/history/HistoryWeekHeader.tsx`, `HistoryEntryCard.tsx`, `EntryDetailModal.tsx` |
+| Nieuw | `src/app/(app)/inzichten/page.tsx`, `src/components/features/insights/*` |
+| Wijzig | `src/types/database.ts`, `AppNav.tsx` |
+| Verwijder/redirect | `src/app/(app)/entries/page.tsx` → redirect naar `/geschiedenis` |
 
 ## Testplan
 
